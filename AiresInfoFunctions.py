@@ -307,6 +307,61 @@ def GetTotalCPUTimeFromSry(sry_file,outmode="N/A"):
     raise
     return -1
 
+def GetLongitudinalTable(Path,TableNumber,Slant=True,Precision="Double"):
+    #todo: check against a list of valid tables
+    deletefile=False
+    sryfile=glob.glob(Path+"/*.sry")
+    idffile=glob.glob(Path+"/*.idf")
+    inpfile=glob.glob(Path+"/*.inp")
+    tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
+
+    if(len(tablefile)==0 and len(idffile)==0):
+      logging.error("The requested table was not found, and the idf file is not present. Cannot get the table")
+      return -1
+
+    if(len(idffile)==1 and len(tablefile)==0):
+      logging.info("could not find the table, trying to guess it from the idf")
+      base=os.path.basename(idffile[0])
+      taskname=os.path.splitext(base)[0]
+
+      if(Slant==True):
+        cmd="AiresExport -O a "+Path+"/"+taskname+" "+str(TableNumber)
+      elif(Slant==False):
+        cmd="AiresExport "+Path+"/"+taskname+" "+str(TableNumber)
+      else:
+        logging.error("unrecognized Slant value, please state either True/False")
+        return -1
+
+      os.system(cmd)
+      tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
+
+      if(len(tablefile)==1):
+        logging.debug("Table exported successfully")
+        deletefile=True
+
+    if(len(tablefile)==1):
+      logging.debug("reading file")
+
+      from numpy import loadtxt
+
+      if(Precision=="Double"):
+        numpyarray=loadtxt(tablefile[0],usecols=(1,2),dtype='f8')
+      elif(Precision=="Simple"):
+        numpyarray=loadtxt(tablefile[0],usecols=(1,2),dtype='f4')
+      else:
+        logging.error("unrecognized precison, please state either Double or Simple")
+        return -1
+
+      if(deletefile==True):
+        cmd="rm "+tablefile[0]
+        os.system(cmd)
+        logging.debug("Table deleted successfully")
+
+      return numpyarray
+    else:
+      logging.error("The requested table was not found and could not be regenerated. Sorry")
+      return -1
+
 
 def ReadAiresSry(sry_file,outmode="N/A"):
 
