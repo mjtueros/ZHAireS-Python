@@ -363,6 +363,175 @@ def GetLongitudinalTable(Path,TableNumber,Slant=True,Precision="Double"):
       return -1
 
 
+def GetLateralTable(Path,TableNumber,Density=True,Precision="Double"):
+    #todo: check against a list of valid tables
+    deletefile=False
+    sryfile=glob.glob(Path+"/*.sry")
+    idffile=glob.glob(Path+"/*.idf")
+    inpfile=glob.glob(Path+"/*.inp")
+    tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
+
+    if(len(tablefile)==0 and len(idffile)==0):
+      logging.error("The requested table was not found, and the idf file is not present. Cannot get the table")
+      return -1
+
+    if(len(idffile)==1 and len(tablefile)==0):
+      logging.info("could not find the table, trying to guess it from the idf")
+      base=os.path.basename(idffile[0])
+      taskname=os.path.splitext(base)[0]
+
+      if(Density==True):
+        cmd="AiresExport -O dX "+Path+"/"+taskname+" "+str(TableNumber)
+      elif(Density==False):
+        cmd="AiresExport -O X "+Path+"/"+taskname+" "+str(TableNumber)
+      else:
+        logging.error("unrecognized Density value, please state either True/False")
+        return -1
+
+      os.system(cmd)
+      tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
+
+      if(len(tablefile)==1):
+        logging.debug("Table exported successfully")
+        deletefile=True
+
+    if(len(tablefile)==1):
+      logging.debug("reading file")
+
+      from numpy import loadtxt
+
+      if(Precision=="Double"):
+        numpyarray=loadtxt(tablefile[0],usecols=(1,2),dtype='f8')
+      elif(Precision=="Simple"):
+        numpyarray=loadtxt(tablefile[0],usecols=(1,2),dtype='f4')
+      else:
+        logging.error("unrecognized precison, please state either Double or Simple")
+        return -1
+
+      if(deletefile==True):
+        cmd="rm "+tablefile[0]
+        os.system(cmd)
+        logging.debug("Table deleted successfully")
+
+      return numpyarray
+    else:
+      logging.error("The requested table was not found and could not be regenerated. Sorry")
+      return -1
+
+
+
+def GetEplusLongitudinalTable(Path,Slant=True,Precision="Double"):
+
+    table=GetLongitudinalTable(Path,1006,Slant,Precision)
+
+    from astropy.table import Table, Column
+    from astropy import units as u
+
+    if(Slant==True):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='SlantDepth')
+    elif(Slant==False):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='VerticalDepth')
+
+    b = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Ne')
+
+    AstropyTable = Table(data=(a,b))
+
+    return AstropyTable
+
+def GetEPlusMinusLongitudinalTable(Path,Slant=True,Precision="Double"):
+
+    table=GetLongitudinalTable(Path,1205,Slant,Precision)
+
+    from astropy.table import Table, Column
+    from astropy import units as u
+
+    if(Slant==True):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='SlantDepth')
+    elif(Slant==False):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='VerticalDepth')
+
+    b = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Ne')
+
+    AstropyTable = Table(data=(a,b))
+
+    return AstropyTable
+
+def GetMuPlusLongitudinalTable(Path,Slant=True,Precision="Double"):
+
+    table=GetLongitudinalTable(Path,1007,Slant,Precision)
+
+    from astropy.table import Table, Column
+    from astropy import units as u
+
+    if(Slant==True):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='SlantDepth')
+    elif(Slant==False):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='VerticalDepth')
+
+    b = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Ne')
+
+    AstropyTable = Table(data=(a,b))
+
+    return AstropyTable
+
+def GetMuPlusMinusLongitudinalTable(Path,Slant=True,Precision="Double"):
+
+    table=GetLongitudinalTable(Path,1207,Slant,Precision)
+
+    from astropy.table import Table, Column
+    from astropy import units as u
+
+    if(Slant==True):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='SlantDepth')
+    elif(Slant==False):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='VerticalDepth')
+
+    b = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Ne')
+
+    AstropyTable = Table(data=(a,b))
+
+    return AstropyTable
+
+def GetGammaLongitudinalTable(Path,Slant=True,Precision="Double"):
+
+    table=GetLongitudinalTable(Path,1001,Slant,Precision)
+
+    from astropy.table import Table, Column
+    from astropy import units as u
+
+    if(Slant==True):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='SlantDepth')
+    elif(Slant==False):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='VerticalDepth')
+
+    b = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Ne')
+
+    AstropyTable = Table(data=(a,b))
+
+    return AstropyTable
+
+def GetAllChargedLongitudinalTable(Path,Slant=True,Precision="Double"):
+
+    table=GetLongitudinalTable(Path,1291,Slant,Precision)
+
+    from astropy.table import Table, Column
+    from astropy import units as u
+
+    if(Slant==True):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='SlantDepth')
+    elif(Slant==False):
+      a = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='VerticalDepth')
+
+    b = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Ne')
+
+    AstropyTable = Table(data=(a,b))
+
+    return AstropyTable
+
+
+
+
+
 def ReadAiresSry(sry_file,outmode="N/A"):
 
   zen=GetZenithAngleFromSry(sry_file,outmode)
