@@ -4,8 +4,9 @@ import os
 import glob
 import logging
 import numpy as np
-import astropy as ap
-#import h5py
+from astropy.table import Table, Column
+from astropy import units as u
+import hdf5fileinout as hdf5io
 logging.basicConfig(level=logging.DEBUG)
 
 if __name__ == '__main__':
@@ -35,6 +36,7 @@ if __name__ == '__main__':
      exit()
 
     #RunInfo
+    EventNumber=0 #we are writing only one event per file for now
     Primary= AiresInfo.GetPrimaryFromSry(sryfile[0],"GRAND")
     Zenith = AiresInfo.GetZenithAngleFromSry(sryfile[0],"GRAND")
     Azimuth = AiresInfo.GetAzimuthAngleFromSry(sryfile[0],"GRAND")
@@ -52,6 +54,8 @@ if __name__ == '__main__':
     Date=AiresInfo.GetDateFromSry(sryfile[0])
     FieldIntensity,FieldInclination,FieldDeclination=AiresInfo.GetMagneticFieldFromSry(sryfile[0])
     AtmosphericModel=AiresInfo.GetAtmosphericModelFromSry(sryfile[0])
+    EnergyInNeutrinos=AiresInfo.GetEnergyFractionInNeutrinosFromSry(sryfile[0])
+    EnergyInNeutrinos=EnergyInNeutrinos*Energy
     #ShowerSimInfo
     ShowerSimulator=AiresInfo.GetAiresVersionFromSry(sryfile[0])
     ShowerSimulator="Aires "+ShowerSimulator
@@ -77,8 +81,9 @@ if __name__ == '__main__':
     print ("****Shower direction (zen, az) = ("+str(Zenith)+','+str(Azimuth) +") deg")
 
 
-    Task=AiresInfo.GetTaskNameFromSry(sryfile[0])
-    filename=Task+".hdf5"
+    EventName=AiresInfo.GetTaskNameFromSry(sryfile[0])
+    filename=EventName+".hdf5"
+    RunName=filename   #for now the name of the run is just the filename
 
     antposfile="N/A"
     if(antposfile=="N/A"):
@@ -95,8 +100,8 @@ if __name__ == '__main__':
         slopeB=[]
         for x in linestoken:
             IDs.append(x.split()[tokens_column_number])
-            slopeA.append(0)
-            slopeB.append(0)
+            slopeA.append(0.0)
+            slopeB.append(0.0)
         token.close()
         antx=positions.T[2]
         anty=positions.T[3]
@@ -128,19 +133,13 @@ if __name__ == '__main__':
     #Table1291=AiresInfo.GetAllChargedLongitudinalTable(inputfolder,Slant=True,Precision="Simple")
     #Table1291.write(filename, path="LongitudinalProfile/all_charged", format="hdf5", append=True, compression=True,serialize_meta=True)
 
-
-    #lets try a compound version:
-    from astropy.table import Table, Column
-    from astropy import units as u
-    #i first call the positron data in slant
-
     #this info can go to the Event meta
     RunInfo=True
     EventInfo=True
     ShowerSimInfo=True
     SignalSimInfo=True
     AntennaInfo=True
-    AntennaTraces=False
+    AntennaTraces=True
     NLongitudinal=True
     ELongitudinal=False
     NlowLongitudinal=False
@@ -163,11 +162,12 @@ if __name__ == '__main__':
     if(RunInfo):
         #all this should be a function call (CreateRunInfo(...). And i have to find a way to add one line to an existing table  !
         RunInfoMeta={
-            "FileFormatVersion":FileFormatVersion
+            "FileFormatVersion":FileFormatVersion,
+            "RunName":RunName                        #for checking
             #TODO: decide what else goes here
         }
 
-        a=Column(data=[Task],name='EventName')   #EventName, states the name of the Task of the simulation, that usually dictates the file names
+        a=Column(data=[EventName],name='EventName')   #EventName, states the name of the Task of the simulation, that usually dictates the file names
         b=Column(data=["N/A"],name='EventID')    #An event might have some ID?
         c=Column(data=[Primary],name='Primary')
         d=Column(data=[Energy],name='Energy',unit=u.EeV)
@@ -183,8 +183,9 @@ if __name__ == '__main__':
 
         AstropyTable = Table(data=(a,b,c,d,e,f,g,h,i,j),meta=RunInfoMeta)
 
+        hdf5io.SaveRunInfo(filename,AstropyTable)
         #WriteRunInfo(
-        AstropyTable.write(filename, path="RunInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
+        #AstropyTable.write(filename, path="RunInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
 
     #############################################################################################################################
     # Event INFO
@@ -192,6 +193,8 @@ if __name__ == '__main__':
     if(EventInfo):
 
         EventInfoMeta = {
+            "RunName":RunName,                         #for cross checking
+            "EventNumber":EventNumber,                 #Position in the RunInfo Table for easy access
             "EventFormatVersion":EventFormatVersion,   #File Format of the Event (if it might be different)
             "EventInfo": EventInfo,                    #event includes event info
             "ShowerSimInfo":ShowerSimInfo,             #event includes shower simulation info
@@ -208,7 +211,7 @@ if __name__ == '__main__':
             #TODO: decide what else goes here
         }
 
-        a1=Column(data=[Task],name='EventName')   #EventName, states the name of the Task of the simulation, that usually dictates the file names
+        a1=Column(data=[EventName],name='EventName')   #EventName, states the name of the Task of the simulation, that usually dictates the file names
         b1=Column(data=["N/A"],name='EventID')    #An event might have some ID?
         c1=Column(data=[Primary],name='Primary')
         d1=Column(data=[Energy],name='Energy',unit=u.EeV)
@@ -227,9 +230,12 @@ if __name__ == '__main__':
         q1=Column(data=[FieldDeclination],name='BFieldDecl',unit=u.deg)
         r1=Column(data=[AtmosphericModel],name='AtmosphericModel')
         s1=Column(data=["N/A"],name='AtmosphericModelParameters')
+        t1=Column(data=[EnergyInNeutrinos],name='EnergyInNeutrinos',unit=u.EeV)
+        AstropyTable = Table(data=(a1,b1,c1,d1,e1,f1,g1,h1,i1,j1,k1,l1,m1,n1,o1,p1,q1,r1,s1,t1),meta=EventInfoMeta)
 
-        AstropyTable = Table(data=(a1,b1,c1,d1,e1,f1,g1,h1,i1,j1,k1,l1,m1,n1,o1,p1,q1,r1,s1),meta=EventInfoMeta)
-        AstropyTable.write(filename, path=Task+"/EventInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
+        hdf5io.SaveEventInfo(filename,AstropyTable,EventName)
+        #AstropyTable.write(filename, path=EventName+"/EventInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
+
 
     #############################################################################################################################
     # ShowerSimINFO (deals with the details for the simulation
@@ -237,7 +243,9 @@ if __name__ == '__main__':
     if(ShowerSimInfo):
 
         ShowerSimInfoMeta = {
-            "ShowerSimulator": ShowerSimulator,            #TODO: decide what goes here
+            "RunName":RunName,                             #For cross checking
+            "EventName":EventName,                         #For cross checking
+            "ShowerSimulator": ShowerSimulator             #TODO: decide what goes here
         }
 
         a2=Column(data=[ShowerSimulator],name='ShowerSimulator')
@@ -253,7 +261,10 @@ if __name__ == '__main__':
         k2=Column(data=["N/A"],name='OtherParameters')
 
         AstropyTable = Table(data=(a2,b2,c2,d2,e2,f2,g2,h2,i2,j2,k2),meta=ShowerSimInfoMeta)
-        AstropyTable.write(filename, path=Task+"/ShowerSimInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
+
+
+        hdf5io.SaveShowerSimInfo(filename,AstropyTable,EventName)
+        #AstropyTable.write(filename, path=EventName+"/ShowerSimInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
 
     #############################################################################################################################
     # SignalSimInfo
@@ -261,6 +272,8 @@ if __name__ == '__main__':
     if(SignalSimInfo):
 
         SignalSimInfoMeta = {
+            "RunName":RunName,                             #For cross checking
+            "EventName":EventName,                         #For cross checking
             "FieldSimulator": FieldSimulator,            #TODO: decide what goes here
         }
 
@@ -276,15 +289,19 @@ if __name__ == '__main__':
         #Number of Triggered FilteredVoltage Antennas
 
         AstropyTable = Table(data=(a3,b3,c3,d3,e3,f3,g3),meta=SignalSimInfoMeta)
-        AstropyTable.write(filename, path=Task+"/SignalSimInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
+
+        hdf5io.SaveSignalSimInfo(filename,AstropyTable,EventName)
+        #AstropyTable.write(filename, path=EventName+"/SignalSimInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
 
     ################################################################################################################################
     # AntennaInfo
     #################################################################################################################################
     if(AntennaInfo):
         AntennaInfoMeta = {
-           "VoltageSimulator": "ComputeVoltage",     #TODO: decide what goes here
-           "AntennaModel": "HorizonAntenna",
+           "RunName":RunName,                             #For cross checking
+           "EventName":EventName,                         #For cross checking
+           "VoltageSimulator": "N/A",     #TODO: decide what goes here
+           "AntennaModel": "N/A",
            "EnvironmentNoiseSimulator": "N/A",
            "ElectronicsSimulator": "N/A",
            "ElectronicsNoiseSimulator": "N/A"
@@ -302,7 +319,9 @@ if __name__ == '__main__':
         #h4=Column(data=Ep2p,name='FilteredVoltageP2P',unit=u.V) #p2p Value of the electric field + antenna response + filtering #TODO:
 
         AstropyTable = Table(data=(a4,b4,c4,d4,e4,f4),meta=SignalSimInfoMeta)
-        AstropyTable.write(filename, path=Task+"/AntennaInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
+
+        hdf5io.SaveAntennaInfo(filename,AstropyTable,EventName)
+        #AstropyTable.write(filename, path=EventName+"/AntennaInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
 
     ################################################################################################################################
     # Individual Antennas (here comes the complicated part)
@@ -327,17 +346,19 @@ if __name__ == '__main__':
             efield = np.loadtxt(ant,dtype='f4') #we read the electric field as a numpy array (this is a problem of ZHAireS)
 
             #From here on, this should be replaced by a function call to the HDF5 file io.(convert numpy to astropy and save)
-            info={
-                 'position': ant_position,
-                 'slope': ant_slope}   #TODO: decide what goes here
+            #info={
+            #     'position': ant_position,
+            #     'slope': ant_slope}   #TODO: decide what goes here
 
-            a = Column(data=efield.T[0],unit=u.ns,name='Time')
-            b = Column(data=efield.T[1],unit=u.u*u.V/u.meter,name='Ex')
-            c = Column(data=efield.T[2],unit=u.u*u.V/u.meter,name='Ey')
-            d = Column(data=efield.T[3],unit=u.u*u.V/u.meter,name='Ez')
-            efield_table = Table(data=(a,b,c,d,), meta=info)
+            #a = Column(data=efield.T[0],unit=u.ns,name='Time')
+            #b = Column(data=efield.T[1],unit=u.u*u.V/u.meter,name='Ex')
+            #c = Column(data=efield.T[2],unit=u.u*u.V/u.meter,name='Ey')
+            #d = Column(data=efield.T[3],unit=u.u*u.V/u.meter,name='Ez')
+            #efield_table = Table(data=(a,b,c,d,), meta=info)
             #this should be another hdf5 function:
-            efield_table.write(filename, path=Task+"/AntennaTraces/"+str(ID)+"/efield", format="hdf5", append=True, compression=True,serialize_meta=True)
+            #efield_table.write(filename, path=EventName+"/AntennaTraces/"+str(ID)+"/efield", format="hdf5", append=True, compression=True,serialize_meta=True)
+            efield=hdf5io.CreateEfieldTable(efield, EventName, EventNumber, ID, ant_number,FieldSimulator)
+            hdf5io.SaveEfieldTable(filename,EventName,ID,efield)
 
     ##############################################################################################################################
     # LONGITUDINAL TABLES
@@ -380,8 +401,9 @@ if __name__ == '__main__':
 
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(Na,Nb,Nc,Nd,Ne,Nf,Ng,Nh,Ni,Nj))
-        AstropyTable.write(filename, path=Task+"/NLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
 
+        #AstropyTable.write(filename, path=EventName+"/ShowerTables/NLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
+        hdf5io.SaveNLongitudinal(filename,AstropyTable,EventName)
     ##############################################################################################################################
     # Energy LONGITUDINAL TABLES (very important to veryfy the energy balance of the cascade, and to compute the invisible energy)
     ##############################################################################################################################
@@ -394,51 +416,53 @@ if __name__ == '__main__':
         #i call the eplusminus table, in vertical, to store also the vertical depth
         table=AiresInfo.GetLongitudinalTable(inputfolder,1705,Slant=False,Precision="Simple")
         Eb = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='VerticalDepth')
-        Ed = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Ee_plus_minus')
+        Ed = Column(data=table.T[1],unit=u.GeV,name='Ee_plus_minus')
 
         #the mu plus mu minus
         table=AiresInfo.GetLongitudinalTable(inputfolder,1707,Slant=True,Precision="Simple")
-        Ee = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Emu_plus_minus')
+        Ee = Column(data=table.T[1],unit=u.GeV,name='Emu_plus_minus')
 
         #the pi plus pi minus
         table=AiresInfo.GetLongitudinalTable(inputfolder,1711,Slant=True,Precision="Simple")
-        Ef = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Epi_plus_minus')
+        Ef = Column(data=table.T[1],unit=u.GeV,name='Epi_plus_minus')
 
         #the k plus k minus
         table=AiresInfo.GetLongitudinalTable(inputfolder,1713,Slant=True,Precision="Simple")
-        Eg = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Ek_plus_minus')
+        Eg = Column(data=table.T[1],unit=u.GeV,name='Ek_plus_minus')
 
         #the neutrons
         table=AiresInfo.GetLongitudinalTable(inputfolder,1521,Slant=True,Precision="Simple")
-        Eh = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Eneutrons')
+        Eh = Column(data=table.T[1],unit=u.GeV,name='Eneutrons')
 
         #the protons
         table=AiresInfo.GetLongitudinalTable(inputfolder,1522,Slant=True,Precision="Simple")
-        Ei = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Eprotons')
+        Ei = Column(data=table.T[1],unit=u.GeV,name='Eprotons')
 
         #the anti-protons
         table=AiresInfo.GetLongitudinalTable(inputfolder,1523,Slant=True,Precision="Simple")
-        Ej = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Eanti_protons')
+        Ej = Column(data=table.T[1],unit=u.GeV,name='Eanti_protons')
 
         #the nuclei
         table=AiresInfo.GetLongitudinalTable(inputfolder,1541,Slant=True,Precision="Simple")
-        Ek = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Enuclei')
+        Ek = Column(data=table.T[1],unit=u.GeV,name='Enuclei')
 
         #the other charged
         table=AiresInfo.GetLongitudinalTable(inputfolder,1591,Slant=True,Precision="Simple")
-        El = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Eother_charged')
+        El = Column(data=table.T[1],unit=u.GeV,name='Eother_charged')
 
         #the other charged
         table=AiresInfo.GetLongitudinalTable(inputfolder,1592,Slant=True,Precision="Simple")
-        Em = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Eother_neutral')
+        Em = Column(data=table.T[1],unit=u.GeV,name='Eother_neutral')
 
         #and the all
         table=AiresInfo.GetLongitudinalTable(inputfolder,1793,Slant=True,Precision="Simple")
-        En = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Eall')
+        En = Column(data=table.T[1],unit=u.GeV,name='Eall')
 
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(Ea,Eb,Ec,Ed,Ee,Ef,Eg,Eh,Ei,Ej,Ek,El,Em,En))
-        AstropyTable.write(filename, path=Task+"/ELongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
+
+        hdf5io.SaveELongitudinal(filename,AstropyTable,EventName)
+        #AstropyTable.write(filename, path=EventName+"/ShowerTables/ELongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
 
     ################################################################################################################################
     # NLowEnergy Longitudinal development
@@ -447,7 +471,7 @@ if __name__ == '__main__':
         #the gammas
         table=AiresInfo.GetLongitudinalTable(inputfolder,7001,Slant=True,Precision="Simple")
         Nla = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='SlantDepth')
-        Nlc = Column(data=table.T[1],unit=u.GeV,name='Nlow_gamma')
+        Nlc = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Nlow_gamma')
 
         #i call the eplusminus table, in vertical, to store also the vertical depth
         table=AiresInfo.GetLongitudinalTable(inputfolder,7005,Slant=False,Precision="Simple")
@@ -472,7 +496,9 @@ if __name__ == '__main__':
 
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(Nla,Nlb,Nlc,Nld,Nle,Nlf,Nlg,Nlh))
-        AstropyTable.write(filename, path=Task+"/NlowLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
+
+        #AstropyTable.write(filename, path=EventName+"/ShowerTables/NlowLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
+        hdf5io.SaveNlowLongitudinal(filename,AstropyTable,EventName)
 
     ################################################################################################################################
     # ELowEnergy Longitudinal development
@@ -486,27 +512,29 @@ if __name__ == '__main__':
         #i call the eplusminus table, in vertical, to store also the vertical depth
         table=AiresInfo.GetLongitudinalTable(inputfolder,7505,Slant=False,Precision="Simple")
         Elb = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='VerticalDepth')
-        Eld = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Elow_e_minus')
+        Eld = Column(data=table.T[1],unit=u.GeV,name='Elow_e_minus')
 
         #the positrons (note that they will deposit twice their rest mass!)
         table=AiresInfo.GetLongitudinalTable(inputfolder,7506,Slant=False,Precision="Simple")
-        Ele = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Elow_e_plus')
+        Ele = Column(data=table.T[1],unit=u.GeV,name='Elow_e_plus')
 
         #the muons
         table=AiresInfo.GetLongitudinalTable(inputfolder,7707,Slant=False,Precision="Simple")
-        Elf = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Elow_mu_plus_minus')
+        Elf = Column(data=table.T[1],unit=u.GeV,name='Elow_mu_plus_minus')
 
         #Other Chaged
         table=AiresInfo.GetLongitudinalTable(inputfolder,7591,Slant=False,Precision="Simple")
-        Elg = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Elow_other_charged')
+        Elg = Column(data=table.T[1],unit=u.GeV,name='Elow_other_charged')
 
         #Other Neutral
         table=AiresInfo.GetLongitudinalTable(inputfolder,7592,Slant=False,Precision="Simple")
-        Elh = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Elow_other_neutral')
+        Elh = Column(data=table.T[1],unit=u.GeV,name='Elow_other_neutral')
 
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(Ela,Elb,Elc,Eld,Ele,Elf,Elg,Elh))
-        AstropyTable.write(filename, path=Task+"/ElowLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
+
+        #AstropyTable.write(filename, path=EventName+"/ShowerTables/ElowLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
+        hdf5io.SaveElowLongitudinal(filename,AstropyTable,EventName)
 
     ################################################################################################################################
     # EnergyDeposit Longitudinal development
@@ -520,27 +548,29 @@ if __name__ == '__main__':
         #i call the eplusminus table, in vertical, to store also the vertical depth
         table=AiresInfo.GetLongitudinalTable(inputfolder,7805,Slant=False,Precision="Simple")
         Edb = Column(data=table.T[0],unit=u.g/(u.cm*u.cm),name='VerticalDepth')
-        Edd = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Edep_e_minus')
+        Edd = Column(data=table.T[1],unit=u.GeV,name='Edep_e_minus')
 
         #the positrons (note that they will deposit twice their rest mass!)
         table=AiresInfo.GetLongitudinalTable(inputfolder,7806,Slant=False,Precision="Simple")
-        Ede = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Edep_e_plus')
+        Ede = Column(data=table.T[1],unit=u.GeV,name='Edep_e_plus')
 
         #the muons
         table=AiresInfo.GetLongitudinalTable(inputfolder,7907,Slant=False,Precision="Simple")
-        Edf = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Edep_mu_plus_minus')
+        Edf = Column(data=table.T[1],unit=u.GeV,name='Edep_mu_plus_minus')
 
         #Other Chaged
         table=AiresInfo.GetLongitudinalTable(inputfolder,7891,Slant=False,Precision="Simple")
-        Edg = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Edep_other_charged')
+        Edg = Column(data=table.T[1],unit=u.GeV,name='Edep_other_charged')
 
         #Other Neutral
         table=AiresInfo.GetLongitudinalTable(inputfolder,7892,Slant=False,Precision="Simple")
-        Edh = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Edep_other_neutral')
+        Edh = Column(data=table.T[1],unit=u.GeV,name='Edep_other_neutral')
 
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(Eda,Edb,Edc,Edd,Ede,Edf,Edg,Edh))
-        AstropyTable.write(filename, path=Task+"/EdepLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
+
+        #AstropyTable.write(filename, path=EventName+"/ShowerTables/EdepLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
+        hdf5io.SaveEdepLongitudinal(filename,AstropyTable,EventName)
 
     ################################################################################################################################
     # Lateral Tables
@@ -568,7 +598,9 @@ if __name__ == '__main__':
 
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(La,Lb,Lc,Ld,Le,Lf,Lg))
-        AstropyTable.write(filename, path=Task+"/NLateralProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
+
+        #AstropyTable.write(filename, path=EventName+"/ShowerTables/NLateralProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
+        hdf5io.SaveLateralDistribution(filename,AstropyTable,EventName)
 
     ################################################################################################################################
     # Energy Distribution at ground Tables
@@ -576,7 +608,7 @@ if __name__ == '__main__':
     if(EnergyDistribution):
         #the gammas
         table=AiresInfo.GetLateralTable(inputfolder,2501,Density=False,Precision="Simple")
-        Eda = Column(data=table.T[0],unit=u.m,name='Distance')
+        Eda = Column(data=table.T[0],unit=u.GeV,name='Energy')
         Edb = Column(data=table.T[1],unit=u.dimensionless_unscaled,name='Ngamma')
 
         table=AiresInfo.GetLateralTable(inputfolder,2705,Density=False,Precision="Simple")
@@ -596,8 +628,9 @@ if __name__ == '__main__':
 
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(Eda,Edb,Edc,Edd,Ede,Edf,Edg))
-        AstropyTable.write(filename, path=Task+"/EGround", format="hdf5", append=True, compression=True,serialize_meta=True)
 
+        #AstropyTable.write(filename, path=EventName+"/ShowerTables/EGround", format="hdf5", append=True, compression=True,serialize_meta=True)
+        hdf5io.SaveEnergyDistribution(filename,AstropyTable,EventName)
 
 
 

@@ -861,6 +861,33 @@ def GetInjectionAltitudeFromSry(sry_file,outmode="N/A"):
 
 
 
+def GetEnergyFractionInNeutrinosFromSry(sry_file,outmode="N/A"):
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      founditonce=0
+      for line in datafile:
+        if 'Neutrinos:' in line:
+          if(founditonce==1):
+            line = line.lstrip()
+            stripedline=line.split('Neutrinos:',-1)
+            stripedline=stripedline[1]
+            stripedline=stripedline.lstrip()
+            stripedline=stripedline.split(' ',-1)
+            energyf=float(stripedline[0])
+            return energyf
+          founditonce=founditonce+1
+      try:
+        energyf
+      except NameError:
+        logging.error('warning NeutrinoEnergyFraction not found')
+        return -1
+  except:
+    logging.error("GetEnergyFractionInNeutrinosFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1
+
+
 
 def GetLongitudinalTable(Path,TableNumber,Slant=True,Precision="Double"):
     #todo: check against a list of valid tables
