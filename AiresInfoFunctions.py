@@ -37,6 +37,8 @@ import logging
 #but it adds modularity, and closes the files when it does not use it any more.
 #If at some point we need speed, then we could input datafile, and make a wraper for opening the file
 
+AiresPath="/home/mjtueros/aires/bin"
+
 def GetZenithAngleFromSry(sry_file,outmode="GRAND"):
   try:
     datafile=open(sry_file,'r')
@@ -444,6 +446,12 @@ def GetTaskNameFromSry(sry_file,outmode="N/A"):
           taskname=stripedline[len(stripedline)-1]
           taskname=taskname.replace('\n','')
           #logging.debug("Found taskname " + taskname)
+          if '...' in taskname:
+            base=os.path.basename(sry_file)
+            taskname=os.path.splitext(base)[0]
+            logging.debug("taskname contained ... (too long), using filename instead")
+            print("taskname:"+taskname)
+
           return taskname
       try:
         taskname
@@ -907,9 +915,9 @@ def GetLongitudinalTable(Path,TableNumber,Slant=True,Precision="Double"):
       taskname=os.path.splitext(base)[0]
 
       if(Slant==True):
-        cmd="AiresExport -O a "+Path+"/"+taskname+" "+str(TableNumber)
+        cmd=AiresPath+"/AiresExport -O a "+Path+"/"+taskname+" "+str(TableNumber)
       elif(Slant==False):
-        cmd="AiresExport "+Path+"/"+taskname+" "+str(TableNumber)
+        cmd=AiresPath+"/AiresExport "+Path+"/"+taskname+" "+str(TableNumber)
       else:
         logging.error("unrecognized Slant value, please state either True/False")
         return -1
@@ -963,9 +971,9 @@ def GetLateralTable(Path,TableNumber,Density=True,Precision="Double"):
       taskname=os.path.splitext(base)[0]
 
       if(Density==True):
-        cmd="AiresExport -O dX "+Path+"/"+taskname+" "+str(TableNumber)
+        cmd=AiresPath+"/AiresExport -O dX "+Path+"/"+taskname+" "+str(TableNumber)
       elif(Density==False):
-        cmd="AiresExport -O X "+Path+"/"+taskname+" "+str(TableNumber)
+        cmd=AiresPath+"/AiresExport -O X "+Path+"/"+taskname+" "+str(TableNumber)
       else:
         logging.error("unrecognized Density value, please state either True/False")
         return -1

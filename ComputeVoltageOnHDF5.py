@@ -24,65 +24,63 @@ def ComputeVoltageOnHDF5(inputfilename,EventNumber=0,FreqMin=50.e6,FreqMax=200.e
     if(outfilename=="N/A"):
       outfilename=inputfilename
 
-      RunInfo=hdf5io.GetRunInfo(inputfilename)
+    RunInfo=hdf5io.GetRunInfo(inputfilename)
 
-      NumberOfEvents=len(RunInfo) #Should this be hdf5io.GetNumberOfEvents(filename (o RunInfo)?)? Probably
-      print("Opening "+inputfilename+", found "+str(NumberOfEvents)+" events")
+    NumberOfEvents=hdf5io.GetNumberOfEvents(RunInfo)
 
-      EventName=RunInfo["EventName"][0] #This gets the Column EventName of the table. Should this be hdf5io.GetEventName(RunInfo?, eventnumber) Yes!
-      Zenith=RunInfo["Zenith"][0]
-      Azimuth=RunInfo["Azimuth"][0]
-      print(EventName,Zenith,Azimuth)
-      print(EventName,type(Zenith),type(Azimuth))
+    logging.info("Opening "+inputfilename+", found "+str(NumberOfEvents)+" events")
 
-      AntennaInfo=hdf5io.GetAntennaInfo(inputfilename,EventName)
-      nantennas=len(AntennaInfo)  #Should this be hdf5io.GetNumberOfAntennas(AntennaInfo)? Possibly
-      print("Found "+str(nantennas)+" antennas")
+    EventName=hdf5io.GetEventName(RunInfo,0)
+    Zenith=hdf5io.GetEventZenith(RunInfo,0)
+    Azimuth=hdf5io.GetEventAzimuth(RunInfo,0)
 
-      #about this loop: note that astropy table could use their oun iterator, like: "for row in table:" andthen access row['columnname'].
-      #The porblem with this, is that it hardwires the file structure into the code, and i dont want that. All those details must remain hidden in hdf5io, so that we dont have
-      #all the scripts if we decide to change something on the file format/structure.
+    AntennaInfo=hdf5io.GetAntennaInfo(inputfilename,EventName)
+    nantennas=hdf5io.GetNumberOfAntennas(AntennaInfo)
+    logging.info("Found "+str(nantennas)+" antennas")
 
-      for i in range(0,nantennas):
+    #about this loop: note that astropy table could use their oun iterator, like: "for row in table:" andthen access row['columnname'].
+    #The porblem with this, is that it hardwires the file structure into the code, and i dont want that. All those details must remain hidden in hdf5io, so that we dont have
+    #all the scripts if we decide to change something on the file format/structure.
 
-        antennaID=AntennaInfo["ID"][i] #Should this be hdf5io.GetAntennaID(AntennaInfo, AntennaNumber)? yes, it should.
+    for i in range(0,nantennas):
 
-        logging.info("computing voltage for antenna "+antennaID+" ("+str(i+1)+"/"+str(nantennas)+")")
+      antennaID=hdf5io.GetAntennaID(AntennaInfo,i)
 
-        position=(AntennaInfo["X"][i],AntennaInfo["Y"][i],AntennaInfo["Z"][i]) #yes, this should be a call to hdf5io.GetAntennaPosition(AntennaInfo,AntennaNumber)
-        logging.debug("at position"+str(position))
+      logging.info("computing voltage for antenna "+antennaID+" ("+str(i+1)+"/"+str(nantennas)+")")
 
-        #in the current implementation, the electric field trace is stored in an astropy table
-        #trace=hdf5io.GetElectricFieldTrace(inputfilename,antennaID)
-        #slopes=hdf5io.GetSlopesFromTrace(trace)
-        slopes=(AntennaInfo["SlopeA"][i] ,AntennaInfo["SlopeB"][i]) #and this a call to hdf5io.GetAntennaSlope(AntennaInfo,AntennaNumber)
+      position=hdf5io.GetAntennaPosition(AntennaInfo,i)
+      logging.debug("at position"+str(position))
 
-        #A NICE call to the radio-simus library. Configuration and details of the voltage computation unavailable for now!.
-        #Configuration should be a little more "present" in the function call,
-        #also maybe the library to handle .ini files would be more profesional and robust than current implementation
+      slopes=hdf5io.GetAntennaSlope(AntennaInfo,i)
 
-        #other detail, we are storing things in astropy arrays, but then switching to numpy, that needs Transposition. This is not very efficient.
-        #I hide this detail to hf5io, so that the names of the field dont remain hardcoded in the script
-        #efield=hdf5io.ElectricFieldTraceToNumpy(trace)
-        efield=hdf5io.GetAntennaEfield(inputfilename,EventName,antennaID)
+      #A NICE call to the radio-simus library. Configuration and details of the voltage computation unavailable for now!.
+      #Configuration should be a little more "present" in the function call,
+      #also maybe the library to handle .ini files would be more profesional and robust than current implementation
 
-        voltage = compute_antennaresponse(efield, Zenith, Azimuth, alpha=slopes[0], beta=slopes[1] )
+      #other detail, we are storing things in astropy arrays, but then switching to numpy, that needs Transposition. This is not very efficient.
+      #I hide this detail to hf5io, so that the names of the field dont remain hardcoded in the script
+      efield=hdf5io.GetAntennaEfield(inputfilename,EventName,antennaID)
 
+      #i compute the antenna response using the compute_antennaresponse function
+      voltage = compute_antennaresponse(efield, Zenith, Azimuth, alpha=slopes[0], beta=slopes[1] )
+
+      #now i need to put a numpy array into an astropy table, but before y change the data type to float32 so that it takes less space (its still good to 7 decimals)
+      voltage32= voltage.astype('f4')
+      TableVoltage = hdf5io.CreateVoltageTable(voltage32,EventName,0,antennaID,i,"computevoltage.compute_antennaresponse")
+
+      #and this is saved to the hdf5 file
+      hdf5io.SaveVoltageTable(outfilename,EventName,antennaID,TableVoltage)
+
+      if(FreqMin!=FreqMax):
+        #filtering the trace using the filters function in signal_processing
+        filteredvoltage=filters(voltage, FreqMin, FreqMax)
         #now i need to put a numpy array into an astropy table, but before y change the data type to float32 so that it takes less space (its still good to 7 decimals)
-        voltage32= voltage.astype('f4')
-        TableVoltage = hdf5io.CreateVoltageTable(voltage32,EventName,0,antennaID,i,"computevoltage.compute_antennaresponse")
+        filteredvoltage32=filteredvoltage.astype('f4')
+        TableFilteredVoltage = hdf5io.CreateVoltageTable(filteredvoltage32,EventName,0,antennaID,i,"signal_processing.filters",info={"FreqMin":FreqMin,"FreqMax":FreqMax})
+        hdf5io.SaveFilteredVoltageTable(outfilename,EventName,antennaID,TableFilteredVoltage)
+      #endif
 
-        #and this is saved to the hdf5 file
-        hdf5io.SaveVoltageTable(outfilename,EventName,antennaID,TableVoltage)
-
-        if(FreqMin!=FreqMax):
-          filteredvoltage=filters(voltage, FreqMin, FreqMax)
-          filteredvoltage32=voltage.astype('f4')
-          TableFilteredVoltage = hdf5io.CreateVoltageTable(filteredvoltage32,EventName,0,antennaID,i,"signal_processing.filters",info={"FreqMin":FreqMin,"FreqMax":FreqMax})
-          hdf5io.SaveFilteredVoltageTable(outfilename,EventName,antennaID,TableFilteredVoltage)
-
-
-        #end for
+    #end for
 
   else:
    logging.critical("input file " + inputfilename + " does not exist or is not a directory. ComputeVoltageOnSHDF5 cannot continue")

@@ -168,8 +168,46 @@ def GetAntennaEfield(InputFilename,EventName,AntennaName,OutputFormat="numpy"):
    EfieldTrace=Table.read(InputFilename, path=EventName+"/AntennaTraces/"+AntennaName+"/efield")
    if(OutputFormat=="numpy"):
      EfieldTrace=np.array([EfieldTrace['Time'], EfieldTrace['Ex'],EfieldTrace['Ey'],EfieldTrace['Ez']]).T
-
    return EfieldTrace
+
+#######################################################################################################################################################################
+# RunInfo Getters
+#######################################################################################################################################################################
+
+def GetNumberOfEvents(RunInfo):
+    return len(RunInfo)
+
+def GetEventName(RunInfo,EventNumber):
+    return RunInfo["EventName"][EventNumber]
+
+def GetEventZenith(RunInfo,EventNumber):
+    return RunInfo["Zenith"][EventNumber]
+
+def GetEventAzimuth(RunInfo,EventNumber):
+    return RunInfo["Azimuth"][EventNumber]
+
+#######################################################################################################################################################################
+# AntennaInfo Getters
+#######################################################################################################################################################################
+
+def GetNumberOfAntennas(AntennaInfo):
+    return len(AntennaInfo)
+
+def GetAntennaID(AntennaInfo,AntennaNumber):
+    return AntennaInfo["ID"][AntennaNumber]
+
+def GetAntennaPosition(AntennaInfo,AntennaNumber):
+    return (AntennaInfo["X"][AntennaNumber],AntennaInfo["Y"][AntennaNumber],AntennaInfo["Z"][AntennaNumber])
+
+def GetAntennaSlope(AntennaInfo,AntennaNumber):
+    return (AntennaInfo["SlopeA"][AntennaNumber] ,AntennaInfo["SlopeB"][AntennaNumber])
+
+
+
+
+
+
+
 
 
 def CreateEfieldTable(efield, EventName, EventNumber, AntennaID, AntennaNumber,FieldSimulator, info={}):
@@ -194,6 +232,7 @@ def CreateEfieldTable(efield, EventName, EventNumber, AntennaID, AntennaNumber,F
     Returns
     ---------
     efield_ant: astropy table
+        The electric field trace as an astropy table
 
     '''
     info.update({'FieldSimulator':FieldSimulator,'EventName': EventName, 'EventNumber': EventNumber, 'AntennaID':AntennaID, 'AntennaNumber':AntennaNumber})
@@ -236,6 +275,7 @@ def CreateVoltageTable(voltage, EventName, EventNumber, AntennaID, AntennaNumber
     Returns
     ---------
     voltage_ant: astropy table
+        The voltage trace as an Astropy table
 
     '''
     info.update({'VoltageSimulator':VoltageSimulator,'EventName': EventName, 'EventNumber': EventNumber, 'AntennaID':AntennaID, 'AntennaNumber':AntennaNumber})
