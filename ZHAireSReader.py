@@ -265,7 +265,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
             return -1
 
 
-        #TODO: all this should be a function call (CreateAntennaInfo(...))
+        #TODO:URGENT all this should be replaced by the function already created in the hdf5io CreatAntennaInfoMeta
         AntennaInfoMeta = {
            "RunName":RunName,                             #For cross checking
            "EventName":EventName,                         #For cross checking
@@ -276,6 +276,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
            "ElectronicsNoiseSimulator": "N/A"
         }
 
+        #TODO:URGENT all this should be replaced by the function already created in the hdf5io CreatAntennaInfo
         a4=Column(data=IDs,name='ID',unit=u.m) #in core cordinates
         b4=Column(data=antx,name='X',unit=u.m) #in core cordinates
         c4=Column(data=anty,name='Y',unit=u.m) #in core cordinates
@@ -287,7 +288,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
         #h4=Column(data=Ep2p,name='VoltageP2P',unit=u.V) #p2p Value of the electric field + antenna response #TODO:
         #h4=Column(data=Ep2p,name='FilteredVoltageP2P',unit=u.V) #p2p Value of the electric field + antenna response + filtering #TODO:
 
-        AstropyTable = Table(data=(a4,b4,c4,d4,e4,f4),meta=SignalSimInfoMeta)
+        AstropyTable = Table(data=(a4,b4,c4,d4,e4,f4),meta=AntennaInfoMeta)
 
         hdf5io.SaveAntennaInfo(filename,AstropyTable,EventName)
         #AstropyTable.write(filename, path=EventName+"/AntennaInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
@@ -313,7 +314,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
             ant_position=(antx[ant_number],anty[ant_number],antz[ant_number])
             ant_slope=(slopeA[ant_number],slopeB[ant_number])
 
-            efield = np.loadtxt(ant,dtype='f4') #we read the electric field as a numpy array (this is a problem of ZHAireS)
+            efield = np.loadtxt(ant,dtype='f4') #we read the electric field as a numpy array
 
             #From here on, this should be replaced by a function call to the HDF5 file io.(convert numpy to astropy and save)
             #info={

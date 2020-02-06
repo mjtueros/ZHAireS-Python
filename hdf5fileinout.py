@@ -87,51 +87,51 @@ import numpy as np
 
 #all the error handling might be easier defined in a general routine: SaveAstropyTable(Tablepath/TableName)
 def SaveRunInfo(OutFilename,RunInfo):
-   #ToDO: Handle error when OutFilename already contains RunInfo
+   #TODO: Handle error when OutFilename already contains RunInfo
    RunInfo.write(OutFilename, path="RunInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveEventInfo(OutFilename,EventInfo,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/EventInfo
+   #TODO: Handle error when OutFilename already contains EventName/EventInfo
    EventInfo.write(OutFilename, path=EventName+"/EventInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveAntennaInfo(OutFilename,AntennaInfo,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/AntennaInfo
+   #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
    AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveShowerSimInfo(OutFilename,ShowerSimInfo,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/ShowerSimInfo
+   #TODO: Handle error when OutFilename already contains EventName/ShowerSimInfo
    ShowerSimInfo.write(OutFilename, path=EventName+"/ShowerSimInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveSignalSimInfo(OutFilename,SignalSimInfo,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/SignalSimInfo
+   #TODO: Handle error when OutFilename already contains EventName/SignalSimInfo
    SignalSimInfo.write(OutFilename, path=EventName+"/SignalSimInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveNLongitudinal(OutFilename,NLongitudinal,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/ShowerTables/NLongitudinalProfile
+   #TODO: Handle error when OutFilename already contains EventName/ShowerTables/NLongitudinalProfile
    NLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/NLongitudinalProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveELongitudinal(OutFilename,ELongitudinal,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/ShowerTables/ELongitudinalProfile
+   #TODO: Handle error when OutFilename already contains EventName/ShowerTables/ELongitudinalProfile
    ELongitudinal.write(OutFilename, path=EventName+"/ShowerTables/ELongitudinalProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveNlowLongitudinal(OutFilename,NlowLongitudinal,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/ShowerTables/NlowLongitudinalProfile
+   #TODO: Handle error when OutFilename already contains EventName/ShowerTables/NlowLongitudinalProfile
    NlowLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/NlowLongitudinalProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveElowLongitudinal(OutFilename,ElowLongitudinal,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/ShowerTables/ElowLongitudinalProfile
+   #TODO: Handle error when OutFilename already contains EventName/ShowerTables/ElowLongitudinalProfile
    ElowLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/ElowLongitudinalProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveEdepLongitudinal(OutFilename,EdepLongitudinal,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/ShowerTables/EdepLongitudinalProfile
+   #TODO: Handle error when OutFilename already contains EventName/ShowerTables/EdepLongitudinalProfile
    EdepLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/EdepLongitudinalProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveLateralDistribution(OutFilename,NLateral,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/ShowerTables/NLateral
+   #TODO: Handle error when OutFilename already contains EventName/ShowerTables/NLateral
    NLateral.write(OutFilename, path=EventName+"/ShowerTables/NLateralProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveEnergyDistribution(OutFilename,EGround,EventName):
-   #ToDO: Handle error when OutFilename already contains EventName/ShowerTables/EGRound
+   #TODO: Handle error when OutFilename already contains EventName/ShowerTables/EGRound
    EGround.write(OutFilename, path=EventName+"/ShowerTables/EGround", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 
@@ -140,75 +140,186 @@ def SaveEnergyDistribution(OutFilename,EGround,EventName):
 ######################################################################################################################################################################
 
 def GetRunInfo(InputFilename):
-   #ToDo: Handle error when "RunInfo" does not exists
-   #ToDo: Handle error when "InputFilename" is not a file, or a valid file.
+   #TODO: Handle error when "RunInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
    RunInfo=Table.read(InputFilename, path="RunInfo")
    return RunInfo
 
 def GetEventInfo(InputFilename,EventName):
-   #ToDo: Handle error when "EventName" does not exists
-   #ToDo: Handle error when "EventName/EventInfo" does not exists
-   #ToDo: Handle error when "InputFilename" is not a file, or a valid file.
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/EventInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
    EventInfo=Table.read(InputFilename, path=EventName+"/EventInfo")
    return EventInfo
 
 def GetAntennaInfo(InputFilename,EventName):
-   #ToDo: Handle error when "EventName" does not exists
-   #ToDo: Handle error when "EventName/AntennaInfo" does not exists
-   #ToDo: Handle error when "InputFilename" is not a file, or a valid file.
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/AntennaInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
    AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaInfo")
    return AntennaInfo
 
 def GetAntennaEfield(InputFilename,EventName,AntennaName,OutputFormat="numpy"):
-   #ToDo: Handle error when "EventName" does not exists
-   #ToDo: Handle error when "EventName/AntennaTraces" does not exists
-   #ToDo: Handle error when "EventName/AntennaTraces/AntennaName" does not exsists
-   #ToDo: Handle error when "EventName/AntennaTraces/AntennaName/Efield" does not exsists
-   #ToDo: Handle error when "InputFilename" is not a file, or a valid file.
-   EfieldTrace=Table.read(InputFilename, path=EventName+"/AntennaTraces/"+AntennaName+"/efield")
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/AntennaTraces" does not exists
+   #TODO: Handle error when "EventName/AntennaTraces/AntennaName" does not exsists
+   #TODO: Handle error when "EventName/AntennaTraces/AntennaName/Efield" does not exsists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   EfieldTrace=Table.read(InputFilename, path=str(EventName)+"/AntennaTraces/"+str(AntennaName)+"/efield")
    if(OutputFormat=="numpy"):
      EfieldTrace=np.array([EfieldTrace['Time'], EfieldTrace['Ex'],EfieldTrace['Ey'],EfieldTrace['Ez']]).T
    return EfieldTrace
+
+def GetAntennaVoltage(InputFilename,EventName,AntennaName,OutputFormat="numpy"):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/AntennaTraces" does not exists
+   #TODO: Handle error when "EventName/AntennaTraces/AntennaName" does not exsists
+   #TODO: Handle error when "EventName/AntennaTraces/AntennaName/Efield" does not exsists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   VoltageTrace=Table.read(InputFilename, path=str(EventName)+"/AntennaTraces/"+str(AntennaName)+"/voltage")
+   if(OutputFormat=="numpy"):
+     VoltageTrace=np.array([VoltageTrace['Time'], VoltageTrace['Vx'],VoltageTrace['Vy'],VoltageTrace['Vz']]).T
+   return VoltageTrace
+
+def GetAntennaFilteredVoltage(InputFilename,EventName,AntennaName,OutputFormat="numpy"):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/AntennaTraces" does not exists
+   #TODO: Handle error when "EventName/AntennaTraces/AntennaName" does not exsists
+   #TODO: Handle error when "EventName/AntennaTraces/AntennaName/Efield" does not exsists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   VoltageTrace=Table.read(InputFilename, path=str(EventName)+"/AntennaTraces/"+str(AntennaName)+"/filteredvoltage")
+   if(OutputFormat=="numpy"):
+     VoltageTrace=np.array([VoltageTrace['Time'], VoltageTrace['Vx'],VoltageTrace['Vy'],VoltageTrace['Vz']]).T
+   return VoltageTrace
+
+
+def GetShowerSimInfo(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/EventInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   ShowerSimInfo=Table.read(InputFilename, path=EventName+"/ShowerSimInfo")
+   return ShowerSimInfo
+
+def GetSignalSimInfo(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/EventInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   SignalSimInfo=Table.read(InputFilename, path=EventName+"/SignalSimInfo")
+   return SignalSimInfo
 
 #######################################################################################################################################################################
 # RunInfo Getters
 #######################################################################################################################################################################
 
 def GetNumberOfEvents(RunInfo):
+   #TODO: Handle errors
     return len(RunInfo)
 
 def GetEventName(RunInfo,EventNumber):
+   #TODO: Handle errors
     return RunInfo["EventName"][EventNumber]
 
 def GetEventZenith(RunInfo,EventNumber):
-    return RunInfo["Zenith"][EventNumber]
+   #TODO: Handle errors
+    return float(RunInfo["Zenith"][EventNumber])
 
 def GetEventAzimuth(RunInfo,EventNumber):
-    return RunInfo["Azimuth"][EventNumber]
+   #TODO: Handle errors
+    return float(RunInfo["Azimuth"][EventNumber])
+
+#######################################################################################################################################################################
+# EventInfo Getters
+#######################################################################################################################################################################
+#TODO: define magnetic field units and coordinate frame propperly. Current implementation uses ZHAireS conventions, but this needs be standarized.
+
+def GetEventBFieldIncl(EventInfo):
+   #TODO: Handle errors
+    return float(EventInfo["BFieldIncl"])
+
+def GetEventBFieldDecl(EventInfo):
+   #TODO: Handle errors
+    return float(EventInfo["BFieldDecl"])
+
 
 #######################################################################################################################################################################
 # AntennaInfo Getters
 #######################################################################################################################################################################
 
+def CreatAntennaInfoMeta(RunName,EventName,VoltageSimulator="N/A",AntennaModel="N/A",EnvironmentNoiseSimulator="N/A",ElectronicsSimulator="N/A",ElectronicsNoiseSimulator="N/A"):
+   #TODO: Handle errors
+    AntennaInfoMeta = {
+           "RunName":RunName,                                        #For cross checking
+           "EventName":EventName,                                    #For cross checking
+           "VoltageSimulator": VoltageSimulator,                     #TODO: decide what goes here
+           "AntennaModel": AntennaModel,
+           "EnvironmentNoiseSimulator": EnvironmentNoiseSimulator,
+           "ElectronicsSimulator": ElectronicsSimulator,
+           "ElectronicsNoiseSimulator": ElectronicsNoiseSimulator
+    }
+    return AntennaInfoMeta
+
+def CreateAntennaInfo(IDs, antx, anty, antz, slopeA, slopeB, AntennaInfoMeta):
+   #TODO: Handle errors
+    a4=Column(data=IDs,name='ID')
+    b4=Column(data=antx,name='X',unit=u.m) #in core cordinates
+    c4=Column(data=anty,name='Y',unit=u.m) #in core cordinates
+    d4=Column(data=antz,name='Z',unit=u.m) #in core cordinates
+    e4=Column(data=slopeA,name='SlopeA',unit=u.m) #in core cordinates
+    f4=Column(data=slopeB,name='SlopeB',unit=u.m) #in core cordinates
+
+    #g4=Column(data=Ep2p,name='FieldP2P',unit=u.V/u.m) #p2p Value of the electric field #TODO:
+    #h4=Column(data=Ep2p,name='VoltageP2P',unit=u.V) #p2p Value of the electric field + antenna response #TODO:
+    #h4=Column(data=Ep2p,name='FilteredVoltageP2P',unit=u.V) #p2p Value of the electric field + antenna response + filtering #TODO:
+
+    AstropyTable = Table(data=(a4,b4,c4,d4,e4,f4),meta=AntennaInfoMeta)
+    return AstropyTable
+
 def GetNumberOfAntennas(AntennaInfo):
+   #TODO: Handle errors
     return len(AntennaInfo)
 
+def GetAntIDFromAntennaInfo(AntennaInfo):
+   #TODO: Handle errors
+   return AntennaInfo["ID"]
+
+def GetXFromAntennaInfo(AntennaInfo):
+   #TODO: Handle errors
+   return AntennaInfo["X"]
+
+def GetYFromAntennaInfo(AntennaInfo):
+   #TODO: Handle errors
+   return AntennaInfo["Y"]
+
+def GetZFromAntennaInfo(AntennaInfo):
+   #TODO: Handle errors
+   return AntennaInfo["Z"]
+
+def GetSlopesFromTrace(Trace):
+   return Trace.meta['slopes']
+
 def GetAntennaID(AntennaInfo,AntennaNumber):
+   #TODO: Handle errors
     return AntennaInfo["ID"][AntennaNumber]
 
 def GetAntennaPosition(AntennaInfo,AntennaNumber):
+   #TODO: Handle errors
     return (AntennaInfo["X"][AntennaNumber],AntennaInfo["Y"][AntennaNumber],AntennaInfo["Z"][AntennaNumber])
 
 def GetAntennaSlope(AntennaInfo,AntennaNumber):
+   #TODO: Handle errors
     return (AntennaInfo["SlopeA"][AntennaNumber] ,AntennaInfo["SlopeB"][AntennaNumber])
 
+def GetAntennaPositions(AntennaInfo):
+   #TODO: Handle errors
+    return (AntennaInfo["X"][:],AntennaInfo["Y"][:],AntennaInfo["Z"][:])
 
+def GetMetaFromTable(AstropyTable):
+   return AstropyTable.meta
 
+def GetAntennaInfoFromEventInfo(EventInfo,nant):
+   return EventInfo[nant]
 
-
-
-
-
+########################################################################################################################
 
 def CreateEfieldTable(efield, EventName, EventNumber, AntennaID, AntennaNumber,FieldSimulator, info={}):
     '''
@@ -246,9 +357,9 @@ def CreateEfieldTable(efield, EventName, EventNumber, AntennaID, AntennaNumber,F
     return efield_ant
 
 def SaveEfieldTable(outputfilename,EventName,antennaID,efield):
-   #ToDo: HAndle error when "efield" already exists
-   #ToDo: HAndle error when "outputfilename" is not a file, or a valid file.
-   #ToDo: Adjust format so that we have the relevant number of significant figures. Maybe float64 is not necesary?. What about using float32 or even float 16?
+   #TODO: HAndle error when "efield" already exists
+   #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
+   #TODO: Adjust format so that we have the relevant number of significant figures. Maybe float64 is not necesary?. What about using float32 or even float 16?
    efield.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/efield", format="hdf5", append=True, compression=True,serialize_meta=True)
 
 
@@ -288,40 +399,20 @@ def CreateVoltageTable(voltage, EventName, EventNumber, AntennaID, AntennaNumber
     return voltage_ant
 
 def SaveVoltageTable(outputfilename,EventName,antennaID,voltage):
-   #ToDo: HAndle error when "voltage" already exists
-   #ToDo: HAndle error when "outputfilename" is not a file, or a valid file.
+   #TODO: HAndle error when "voltage" already exists
+   #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
    voltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/voltage", format="hdf5", append=True,compression=True,serialize_meta=True)
 
 def SaveFilteredVoltageTable(outputfilename,EventName,antennaID,filteredvoltage):
-   #ToDo: HAndle error when "voltage" already exists
-   #ToDo: HAndle error when "outputfilename" is not a file, or a valid file.
+   #TODO: HAndle error when "voltage" already exists
+   #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
    filteredvoltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/filteredvoltage", format="hdf5", append=True,compression=True,serialize_meta=True)
 
 #######################################################################################################################################################################
 # Other Stuff to see how things could be done
 #######################################################################################################################################################################
 
-def GetMetaFromTable(AstropyTable):
-   return AstropyTable.meta
 
-def GetAntennaInfoFromEventInfo(EventInfo,nant):
-   return EventInfo[nant]
-
-def GetAntIDFromAntennaInfo(AntennaInfo):
-   return AntennaInfo["ant_ID"]
-
-def GetXFromAntennaInfo(AntennaInfo):
-   return AntennaInfo["pos_x"]
-
-def GetYFromAntennaInfo(AntennaInfo):
-   return AntennaInfo["pos_y"]
-
-def GetZFromAntennaInfo(AntennaInfo):
-   return AntennaInfo["pos_z"]
-
-
-def GetSlopesFromTrace(Trace):
-   return Trace.meta['slopes']
 
 
 

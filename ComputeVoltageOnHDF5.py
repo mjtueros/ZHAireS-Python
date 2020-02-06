@@ -12,10 +12,10 @@ import hdf5fileinout as hdf5io
 
 logging.basicConfig(level=logging.DEBUG)
 
-#if no outfilename is given, it will store the table in the same HDF5 dile, in a separate table (handle what happens if it already exists)
+#if no outfilename is given, it will store the table in the same HDF5 dile, in a separate table (TODO: handle what happens if it already exists)
 
 #this computes the voltage on all the antennas, but if this gets too CPU intense in some application we might want to apply some filter,
-#that could go in the funnction call like...such as only compute if the peak to peak amplitude is higher than something, or the distance to the core is less than something.
+#that could go in the funnction call like...such as only compute if the peak to peak amplitude is higher than something, or the distance to the core is less than something,etc.
 
 def ComputeVoltageOnHDF5(inputfilename,EventNumber=0,FreqMin=50.e6,FreqMax=200.e6,outfilename="N/A"):
 #EventNumber=all could trigger a loop on all events in the file.
