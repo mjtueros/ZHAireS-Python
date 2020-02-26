@@ -28,7 +28,7 @@ def ComputeVoltageOnHDF5(inputfilename,EventNumber=0,FreqMin=50.e6,FreqMax=200.e
 
     NumberOfEvents=hdf5io.GetNumberOfEvents(RunInfo)
 
-    logging.info("Opening "+inputfilename+", found "+str(NumberOfEvents)+" events")
+    logging.info("Computing Voltages for "+inputfilename+", found "+str(NumberOfEvents)+" events")
 
     EventName=hdf5io.GetEventName(RunInfo,0)
     Zenith=hdf5io.GetEventZenith(RunInfo,0)

@@ -95,15 +95,21 @@ def SaveEventInfo(OutFilename,EventInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/EventInfo
    EventInfo.write(OutFilename, path=EventName+"/EventInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
-def SaveAntennaInfo(OutFilename,AntennaInfo,EventName,overwrite=False):
+def SaveAntennaInfo(OutFilename,AntennaInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
-   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
-   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo", format="hdf5", append=True,  compression=True, serialize_meta=True, overwrite=overwrite)
+   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)9
+   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
-def SaveAntennaInfo4(OutFilename,AntennaInfo,EventName,overwrite=False):
+#left here for compatibility with some old code [deprecated]
+def SaveAntennaInfo4(OutFilename,AntennaInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
    #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
-   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo4", format="hdf5", append=True,  compression=True, serialize_meta=True, overwrite=overwrite)
+   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo4", format="hdf5", append=True,  compression=True, serialize_meta=True)
+
+def SaveAntennaP2PInfo(OutFilename,AntennaP2PInfo,EventName):
+   #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
+   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
+   AntennaP2PInfo.write(OutFilename, path=EventName+"/AntennaP2PInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
 def SaveShowerSimInfo(OutFilename,ShowerSimInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerSimInfo
@@ -324,6 +330,7 @@ def CreateAntennaInfo(IDs, antx, anty, antz, slopeA, slopeB, AntennaInfoMeta, P2
     f4=Column(data=slopeB,name='SlopeB',unit=u.m) #in core cordinates
     data=[a4,b4,c4,d4,e4,f4]
 
+    #this is left here for now, but all the P2P section was moved to a separate table
     if P2Pefield is not None:
       P2Pefield32=P2Pefield.astype('f4') #reduce the data type to float 32
 
@@ -371,13 +378,99 @@ def CreateAntennaInfo(IDs, antx, anty, antz, slopeA, slopeB, AntennaInfoMeta, P2
 
     if HilbertPeakTime is not None:
       HilbertPeakTime32=HilbertPeakTime.astype('f4') #reduce the data type to float 32
-      g4=Column(data=HilbertPeakTime32,name='HilbertPeakTime',unit=u.u*u.s) #
+      g4=Column(data=HilbertPeakTime32,name='HilbertPeakTime',unit=u.ns) #
       data.append(g4)
       AntennaInfoMeta.update(HilbertPeakTime=True)
 
 
     AstropyTable = Table(data=data,meta=AntennaInfoMeta)
     return AstropyTable
+
+
+def CreateAntennaP2PInfo(IDs, AntennaInfoMeta, P2Pefield=None,P2Pvoltage=None,P2Pfiltered=None,HilbertPeakE=None,HilbertPeakV=None,HilbertPeakFV=None,HilbertPeakTimeE=None,HilbertPeakTimeV=None,HilbertPeakTimeFV=None):
+   #TODO: Handle errors
+    a4=Column(data=IDs,name='ID')
+    data=[a4]
+
+    if P2Pefield is not None:
+      P2Pefield32=P2Pefield.astype('f4') #reduce the data type to float 32
+
+      g4=Column(data=P2Pefield32[3,:],name='P2P_efield',unit=u.u*u.V/u.m) #p2p Value of the electric field
+      data.append(g4)
+      g4=Column(data=P2Pefield32[0,:],name='P2Px_efield',unit=u.u*u.V/u.m) #p2p Value of the electric field
+      data.append(g4)
+      g4=Column(data=P2Pefield32[1,:],name='P2Py_efield',unit=u.u*u.V/u.m) #p2p Value of the electric field
+      data.append(g4)
+      g4=Column(data=P2Pefield32[2,:],name='P2Pz_efield',unit=u.u*u.V/u.m) #p2p Value of the electric field
+      data.append(g4)
+      AntennaInfoMeta.update(P2Pefield=True)
+
+    if P2Pvoltage is not None:
+      P2Pvoltage32=P2Pvoltage.astype('f4') #reduce the data type to float 32
+
+      g4=Column(data=P2Pvoltage32[3,:],name='P2P_voltage',unit=u.u*u.V) #p2p Value of the voltage
+      data.append(g4)
+      g4=Column(data=P2Pvoltage32[0,:],name='P2Px_voltage',unit=u.u*u.V) #p2p Value of the voltage
+      data.append(g4)
+      g4=Column(data=P2Pvoltage32[1,:],name='P2Py_voltage',unit=u.u*u.V) #p2p Value of the voltage
+      data.append(g4)
+      g4=Column(data=P2Pvoltage32[2,:],name='P2Pz_voltage',unit=u.u*u.V) #p2p Value of the voltage
+      data.append(g4)
+      AntennaInfoMeta.update(P2Pvoltage=True)
+
+    if P2Pfiltered is not None:
+      P2Pfiltered32=P2Pfiltered.astype('f4') #reduce the data type to float 32
+
+      g4=Column(data=P2Pfiltered32[3,:],name='P2P_filtered',unit=u.u*u.V) #p2p Value of the filtered voltage
+      data.append(g4)
+      g4=Column(data=P2Pfiltered32[0,:],name='P2Px_filtered',unit=u.u*u.V) #p2p Value of the filtered voltage
+      data.append(g4)
+      g4=Column(data=P2Pfiltered32[1,:],name='P2Py_filtered',unit=u.u*u.V) #p2p Value of the filtered voltage
+      data.append(g4)
+      g4=Column(data=P2Pfiltered32[2,:],name='P2Pz_filtered',unit=u.u*u.V) #p2p Value of the filtered voltage
+      data.append(g4)
+      AntennaInfoMeta.update(P2Pfiltered=True)
+
+    if HilbertPeakE is not None:
+      HilbertPeakE32=HilbertPeakE.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertPeakE32,name='HilbertPeakE') #
+      data.append(g4)
+      AntennaInfoMeta.update(HilbertPeakE=True)
+
+    if HilbertPeakTimeE is not None:
+      HilbertPeakTimeE32=HilbertPeakTimeE.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertPeakTimeE32,name='HilbertPeakTimeE',unit=u.ns) #
+      data.append(g4)
+      AntennaInfoMeta.update(HilbertPeakTimeE=True)
+
+    if HilbertPeakV is not None:
+      HilbertPeakV32=HilbertPeakV.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertPeakV32,name='HilbertPeakV') #
+      data.append(g4)
+      AntennaInfoMeta.update(HilbertPeakV=True)
+
+    if HilbertPeakTimeV is not None:
+      HilbertPeakTimeV32=HilbertPeakTimeV.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertPeakTimeV32,name='HilbertPeakTimeV',unit=u.ns) #
+      data.append(g4)
+      AntennaInfoMeta.update(HilbertPeakTimeV=True)
+
+    if HilbertPeakFV is not None:
+      HilbertPeakFV32=HilbertPeakFV.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertPeakFV32,name='HilbertPeakFV') #
+      data.append(g4)
+      AntennaInfoMeta.update(HilbertPeakFV=True)
+
+    if HilbertPeakTimeFV is not None:
+      HilbertPeakTimeFV32=HilbertPeakTimeFV.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertPeakTimeFV32,name='HilbertPeakTimeFV',unit=u.ns) #
+      data.append(g4)
+      AntennaInfoMeta.update(HilbertPeakTimeFV=True)
+
+
+    AstropyTable = Table(data=data,meta=AntennaInfoMeta)
+    return AstropyTable
+
 
 def GetNumberOfAntennas(AntennaInfo):
    #TODO: Handle errors
@@ -517,9 +610,12 @@ def SaveFilteredVoltageTable(outputfilename,EventName,antennaID,filteredvoltage)
 # Other Stuff to see how things could be done
 #######################################################################################################################################################################
 
+#TODO: Split this in 2 functions: GetP2PFromTrace(Trace) to get p2px,p2py,p2pz and p2ptotal (this is not an hdf5io function)
+#      used in GetEventP2P(InputFilename, CurrentEventName) to get them for all the antennas in the event
 def get_p2p_hdf5(InputFilename,antennamax='All',antennamin=0,usetrace='efield'):
 
     #TODO: Handle Errors
+    #TODO: Handle Errors when the trace type is not found
     '''
     read in all traces from antennamax to antennamin and output the peak to peak electric field and amplitude
 
@@ -562,26 +658,21 @@ def get_p2p_hdf5(InputFilename,antennamax='All',antennamin=0,usetrace='efield'):
       else:
         print('You must specify either efield, voltage or filteredvoltage, bailing out')
 
-      #transposing takes a lot of time
-      #p2p_Ex[i] = max(trace.T[1])-min(trace.T[1])
-      #p2p_Ey[i] = max(trace.T[2])-min(trace.T[2])
-      #p2p_Ez[i] = max(trace.T[3])-min(trace.T[3])
       p2p= np.amax(trace,axis=0)-np.amin(trace,axis=0)
       p2p_Ex[i-antennamin]= p2p[1]
       p2p_Ey[i-antennamin]= p2p[2]
       p2p_Ez[i-antennamin]= p2p[3]
 
-      #amplitude = np.sqrt(trace.T[1]**2. + trace.T[2]**2. + trace.T[3]**2.) # combined components
       amplitude = np.sqrt(trace[:,1]**2. + trace[:,2]**2. + trace[:,3]**2.) # combined components
-      #print(amplitude-amplitude2)
 
       p2p_total[i-antennamin] = max(amplitude)-min(amplitude)
-
-      #print(p2p_Ex,p2p_Ey,p2p_Ez,p2p_total)
 
     p2pE = np.stack((p2p_Ex, p2p_Ey, p2p_Ez, p2p_total), axis=0)
     return p2pE
 
+
+#TODO: Split this in 2 functions: GetHilbertFromTrace(Trace) to get hilbert amplitude and time (this is not an hdf5io function)
+#      used in GetEventHilbert(InputFilename, CurrentEventName) to get them for all the antennas in the event
 def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, usetrace="efield", DISPLAY=False) :
 #adapted from Valentin Decoene
     #TODO: Handle Errors
