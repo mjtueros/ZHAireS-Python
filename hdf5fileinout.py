@@ -2,6 +2,7 @@
 from astropy.table import Table, Column
 from astropy import units as u
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 ################################################################################################################################
@@ -94,9 +95,15 @@ def SaveEventInfo(OutFilename,EventInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/EventInfo
    EventInfo.write(OutFilename, path=EventName+"/EventInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
 
-def SaveAntennaInfo(OutFilename,AntennaInfo,EventName):
+def SaveAntennaInfo(OutFilename,AntennaInfo,EventName,overwrite=False):
    #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
-   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
+   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo", format="hdf5", append=True,  compression=True, serialize_meta=True, overwrite=overwrite)
+
+def SaveAntennaInfo4(OutFilename,AntennaInfo,EventName,overwrite=False):
+   #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
+   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
+   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo4", format="hdf5", append=True,  compression=True, serialize_meta=True, overwrite=overwrite)
 
 def SaveShowerSimInfo(OutFilename,ShowerSimInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerSimInfo
@@ -157,6 +164,13 @@ def GetAntennaInfo(InputFilename,EventName):
    #TODO: Handle error when "EventName/AntennaInfo" does not exists
    #TODO: Handle error when "InputFilename" is not a file, or a valid file.
    AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaInfo")
+   return AntennaInfo
+
+def GetAntennaInfo4(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/AntennaInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaInfo4")
    return AntennaInfo
 
 def GetAntennaEfield(InputFilename,EventName,AntennaName,OutputFormat="numpy"):
@@ -227,6 +241,30 @@ def GetEventAzimuth(RunInfo,EventNumber):
    #TODO: Handle errors
     return float(RunInfo["Azimuth"][EventNumber])
 
+def GetEventPrimary(RunInfo,EventNumber):
+   #TODO: Handle errors
+    return str(RunInfo["Primary"][EventNumber])
+
+def GetEventEnergy(RunInfo,EventNumber):
+   #TODO: Handle errors
+    return float(RunInfo["Energy"][EventNumber])
+
+def GetEventXmaxDistance(RunInfo,EventNumber):
+   #TODO: Handle errors
+    return float(RunInfo["XmaxDistance"][EventNumber])
+
+def GetEventSlantXmax(RunInfo,EventNumber):
+   #TODO: Handle errors
+    return float(RunInfo["SlantXmax"][EventNumber])
+
+def GetEventEnergy(RunInfo,EventNumber):
+   #TODO: Handle errors
+    return float(RunInfo["Energy"][EventNumber])
+
+def GetEventHadronicModel(RunInfo,EventNumber):
+   #TODO: Handle errors
+    return str(RunInfo["HadronicModel"][EventNumber])
+
 #######################################################################################################################################################################
 # EventInfo Getters
 #######################################################################################################################################################################
@@ -240,6 +278,24 @@ def GetEventBFieldDecl(EventInfo):
    #TODO: Handle errors
     return float(EventInfo["BFieldDecl"])
 
+def GetGroundAltitude(EventInfo):
+   #TODO: Handle errors
+    return float(EventInfo["GroundAltitude"])
+
+#######################################################################################################################################################################
+# SignalSimInfo Getters
+#######################################################################################################################################################################
+def GetTimeBinSize(SignalSimInfo):
+   #TODO: Handle errors
+    return float(SignalSimInfo["TimeBinSize"])
+
+def GetTimeWindowMin(SignalSimInfo):
+   #TODO: Handle errors
+    return float(SignalSimInfo["TimeWindowMin"])
+
+def GetTimeWindowMax(SignalSimInfo):
+   #TODO: Handle errors
+    return float(SignalSimInfo["TimeWindowMax"])
 
 #######################################################################################################################################################################
 # AntennaInfo Getters
@@ -258,7 +314,7 @@ def CreatAntennaInfoMeta(RunName,EventName,VoltageSimulator="N/A",AntennaModel="
     }
     return AntennaInfoMeta
 
-def CreateAntennaInfo(IDs, antx, anty, antz, slopeA, slopeB, AntennaInfoMeta):
+def CreateAntennaInfo(IDs, antx, anty, antz, slopeA, slopeB, AntennaInfoMeta, P2Pefield=None,P2Pvoltage=None,P2Pfiltered=None,HilbertPeak=None,HilbertPeakTime=None):
    #TODO: Handle errors
     a4=Column(data=IDs,name='ID')
     b4=Column(data=antx,name='X',unit=u.m) #in core cordinates
@@ -266,12 +322,61 @@ def CreateAntennaInfo(IDs, antx, anty, antz, slopeA, slopeB, AntennaInfoMeta):
     d4=Column(data=antz,name='Z',unit=u.m) #in core cordinates
     e4=Column(data=slopeA,name='SlopeA',unit=u.m) #in core cordinates
     f4=Column(data=slopeB,name='SlopeB',unit=u.m) #in core cordinates
+    data=[a4,b4,c4,d4,e4,f4]
 
-    #g4=Column(data=Ep2p,name='FieldP2P',unit=u.V/u.m) #p2p Value of the electric field #TODO:
-    #h4=Column(data=Ep2p,name='VoltageP2P',unit=u.V) #p2p Value of the electric field + antenna response #TODO:
-    #h4=Column(data=Ep2p,name='FilteredVoltageP2P',unit=u.V) #p2p Value of the electric field + antenna response + filtering #TODO:
+    if P2Pefield is not None:
+      P2Pefield32=P2Pefield.astype('f4') #reduce the data type to float 32
 
-    AstropyTable = Table(data=(a4,b4,c4,d4,e4,f4),meta=AntennaInfoMeta)
+      g4=Column(data=P2Pefield32[3,:],name='P2P_efield',unit=u.u*u.V/u.m) #p2p Value of the electric field
+      data.append(g4)
+      g4=Column(data=P2Pefield32[0,:],name='P2Px_efield',unit=u.u*u.V/u.m) #p2p Value of the electric field
+      data.append(g4)
+      g4=Column(data=P2Pefield32[1,:],name='P2Py_efield',unit=u.u*u.V/u.m) #p2p Value of the electric field
+      data.append(g4)
+      g4=Column(data=P2Pefield32[2,:],name='P2Pz_efield',unit=u.u*u.V/u.m) #p2p Value of the electric field
+      data.append(g4)
+      AntennaInfoMeta.update(P2Pefield=True)
+
+    if P2Pvoltage is not None:
+      P2Pvoltage32=P2Pvoltage.astype('f4') #reduce the data type to float 32
+
+      g4=Column(data=P2Pvoltage32[3,:],name='P2P_voltage',unit=u.u*u.V) #p2p Value of the voltage
+      data.append(g4)
+      g4=Column(data=P2Pvoltage32[0,:],name='P2Px_voltage',unit=u.u*u.V) #p2p Value of the voltage
+      data.append(g4)
+      g4=Column(data=P2Pvoltage32[1,:],name='P2Py_voltage',unit=u.u*u.V) #p2p Value of the voltage
+      data.append(g4)
+      g4=Column(data=P2Pvoltage32[2,:],name='P2Pz_voltage',unit=u.u*u.V) #p2p Value of the voltage
+      data.append(g4)
+      AntennaInfoMeta.update(P2Pvoltage=True)
+
+    if P2Pfiltered is not None:
+      P2Pfiltered32=P2Pfiltered.astype('f4') #reduce the data type to float 32
+
+      g4=Column(data=P2Pfiltered32[3,:],name='P2P_filtered',unit=u.u*u.V) #p2p Value of the filtered voltage
+      data.append(g4)
+      g4=Column(data=P2Pfiltered32[0,:],name='P2Px_filtered',unit=u.u*u.V) #p2p Value of the filtered voltage
+      data.append(g4)
+      g4=Column(data=P2Pfiltered32[1,:],name='P2Py_filtered',unit=u.u*u.V) #p2p Value of the filtered voltage
+      data.append(g4)
+      g4=Column(data=P2Pfiltered32[2,:],name='P2Pz_filtered',unit=u.u*u.V) #p2p Value of the filtered voltage
+      data.append(g4)
+      AntennaInfoMeta.update(P2Pfiltered=True)
+
+    if HilbertPeak is not None:
+      HilbertPeak32=HilbertPeak.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertPeak32,name='HilbertPeak') #
+      data.append(g4)
+      AntennaInfoMeta.update(HilbertPeak=True)
+
+    if HilbertPeakTime is not None:
+      HilbertPeakTime32=HilbertPeakTime.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertPeakTime32,name='HilbertPeakTime',unit=u.u*u.s) #
+      data.append(g4)
+      AntennaInfoMeta.update(HilbertPeakTime=True)
+
+
+    AstropyTable = Table(data=data,meta=AntennaInfoMeta)
     return AstropyTable
 
 def GetNumberOfAntennas(AntennaInfo):
@@ -412,7 +517,171 @@ def SaveFilteredVoltageTable(outputfilename,EventName,antennaID,filteredvoltage)
 # Other Stuff to see how things could be done
 #######################################################################################################################################################################
 
+def get_p2p_hdf5(InputFilename,antennamax='All',antennamin=0,usetrace='efield'):
 
+    #TODO: Handle Errors
+    '''
+    read in all traces from antennamax to antennamin and output the peak to peak electric field and amplitude
+
+    Parameters:
+    InputFilename: str
+        HDF5File
+    antennamin: int
+       starting antenna (starts from 0)
+    antennamax: int
+       final antenna ('All uses all the antennas)
+    usetrace: str
+       efield, voltage, filteredvoltage
+    Output:
+    p2pE: numpy array
+        [p2p_Ex, p2p_Ey, p2p_Ez, p2p_total]: peak-to-peak electric fields along x, y, z, and norm
+
+    '''
+    CurrentRunInfo=GetRunInfo(InputFilename)
+    CurrentEventName=GetEventName(CurrentRunInfo,0) #using the first event of each file (there is only one for now)
+    CurrentAntennaInfo=GetAntennaInfo(InputFilename,CurrentEventName)
+
+    if(antennamax=='All'):
+     antennamax=len(CurrentAntennaInfo)-1
+
+    # create an array
+    p2p_Ex = np.zeros(1+antennamax-antennamin)
+    p2p_Ey = np.zeros(1+antennamax-antennamin)
+    p2p_Ez = np.zeros(1+antennamax-antennamin)
+    p2p_total = np.zeros(1+antennamax-antennamin)
+    p2pE=np.zeros(1+antennamax-antennamin)
+
+    for i in range(antennamin,antennamax+1):
+      AntennaID=GetAntennaID(CurrentAntennaInfo,i)
+      if(usetrace=='efield'):
+        trace=GetAntennaEfield(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      elif(usetrace=='voltage'):
+        trace=GetAntennaVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      elif(usetrace=='filteredvoltage'):
+        trace=GetAntennaFilteredVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      else:
+        print('You must specify either efield, voltage or filteredvoltage, bailing out')
+
+      #transposing takes a lot of time
+      #p2p_Ex[i] = max(trace.T[1])-min(trace.T[1])
+      #p2p_Ey[i] = max(trace.T[2])-min(trace.T[2])
+      #p2p_Ez[i] = max(trace.T[3])-min(trace.T[3])
+      p2p= np.amax(trace,axis=0)-np.amin(trace,axis=0)
+      p2p_Ex[i-antennamin]= p2p[1]
+      p2p_Ey[i-antennamin]= p2p[2]
+      p2p_Ez[i-antennamin]= p2p[3]
+
+      #amplitude = np.sqrt(trace.T[1]**2. + trace.T[2]**2. + trace.T[3]**2.) # combined components
+      amplitude = np.sqrt(trace[:,1]**2. + trace[:,2]**2. + trace[:,3]**2.) # combined components
+      #print(amplitude-amplitude2)
+
+      p2p_total[i-antennamin] = max(amplitude)-min(amplitude)
+
+      #print(p2p_Ex,p2p_Ey,p2p_Ez,p2p_total)
+
+    p2pE = np.stack((p2p_Ex, p2p_Ey, p2p_Ez, p2p_total), axis=0)
+    return p2pE
+
+def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, usetrace="efield", DISPLAY=False) :
+#adapted from Valentin Decoene
+    #TODO: Handle Errors
+    '''
+    read in all traces from antennamax to antennamin and output the peak to peak electric field and amplitude
+
+    Parameters:
+    InputFilename: str
+        HDF5File
+    antennamin: int
+       starting antenna (starts from 0)
+    antennamax: int
+       final antenna ('All uses all the antennas)
+    usetrace: str
+       efield, voltage, filteredvoltage
+    Output:
+    peaktime: numpy array with the time of the maximum of the hilbert amplitude of the strongest channel
+    peakamplitude: numpy array with the maximum of the hilbert amplitude of the strongest channel
+    '''
+    DISPLAY=False
+    CurrentRunInfo=GetRunInfo(InputFilename)
+    CurrentEventName=GetEventName(CurrentRunInfo,0) #using the first event of each file (there is only one for now)
+    CurrentAntennaInfo=GetAntennaInfo(InputFilename,CurrentEventName)
+
+    if(antennamax=='All'):
+      antennamax=len(CurrentAntennaInfo)-1
+
+    peaktime= np.zeros(1+antennamax-antennamin)
+    peakamplitude= np.zeros(1+antennamax-antennamin)
+
+    for i in range(antennamin,antennamax+1):
+      AntennaID=GetAntennaID(CurrentAntennaInfo,i)
+      if(usetrace=='efield'):
+        trace=GetAntennaEfield(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      elif(usetrace=='voltage'):
+        trace=GetAntennaVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      elif(usetrace=='filteredvoltage'):
+        trace=GetAntennaFilteredVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      else:
+        print('You must specify either efield, voltage or filteredvoltage, bailing out')
+
+      from scipy.signal import hilbert
+      #now, this is not doing exactly what i was expecting (the hilbert of each component separately. When i plot it, it seems to be mixing channels up)
+      #however, it does get the maximum of the modulus of the signal (but i dont understand whats really going on!)
+      hilbert_trace=hilbert(trace[:,1:4])
+      hilbert_amp = np.abs(hilbert_trace) 												                     #enveloppe de hilbert x, y, z channels
+      peakamplitude[i-antennamin]=max([max(hilbert_amp[:,0]), max(hilbert_amp[:,1]), max(hilbert_amp[:,2])]) #find best peakamp for the 3 channels
+      peaktime[i-antennamin]=trace[np.where(hilbert_amp == peakamplitude[i-antennamin])[0],0]                # get the time of the peak amplitude
+
+
+      #PLOT
+      if DISPLAY :
+        print(peakamplitude[i-antennamin])
+        print('peaktime = ',peaktime[i-antennamin])
+
+        hilbert_trace_x=hilbert(trace[:,1])
+        hilbert_amp_x = np.abs(hilbert_trace_x)
+        hilbert_trace_y=hilbert(trace[:,2])
+        hilbert_amp_y = np.abs(hilbert_trace_y)
+        hilbert_trace_z=hilbert(trace[:,3])
+        hilbert_amp_z = np.abs(hilbert_trace_z)
+
+        hilbert_amp2=np.zeros(np.shape(trace[:,1:4]))
+        hilbert_amp2[:,0]=hilbert_amp_x
+        hilbert_amp2[:,1]=hilbert_amp_y
+        hilbert_amp2[:,2]=hilbert_amp_z
+        #peakamplitude[i-antennamin]=max([max(hilbert_amp2[:,0]), max(hilbert_amp2[:,1]), max(hilbert_amp2[:,2])]) #find best peakamp for the 3 channels
+        #peaktime[i-antennamin]=trace[np.where(hilbert_amp2 == peakamplitude[i-antennamin])[0],0]                # get the time of the peak amplitude
+
+
+        fig1 = plt.figure(1,figsize=(7,5), dpi=100, facecolor='w', edgecolor='k')
+
+        ax1=fig1.add_subplot(221)
+        plt.plot(trace[:,0], hilbert_amp[:,0], label = 'Hilbert env channel x')
+        plt.plot(trace[:,0], trace[:,1], label = 'channel x')
+        plt.plot(trace[:,0], hilbert_amp_x, label = 'Hilbertx env channel x')
+
+        plt.legend(loc = 'best')
+
+        ax1=fig1.add_subplot(222)
+        plt.plot(trace[:,0], hilbert_amp[:,1], label = 'Hilbert env channel y')
+        plt.plot(trace[:,0], trace[:,2], label = 'channel y')
+        plt.plot(trace[:,0], hilbert_amp_y, label = 'Hilbertx env channel y')
+        plt.legend(loc = 'best')
+
+        ax1=fig1.add_subplot(223)
+        plt.plot(trace[:,0], hilbert_amp[:,2], label = 'Hilbert env channel z')
+        plt.plot(trace[:,0], trace[:,3], label = 'channel z')
+        plt.plot(trace[:,0], hilbert_amp_z, label = 'Hilbertx env channel z')
+        plt.legend(loc = 'best')
+
+        ax1=fig1.add_subplot(224)
+        plt.plot(trace[:,0], np.sqrt(trace[:,1]**2 + trace[:,2]**2 + trace[:,3]**2), label = 'modulus signal')
+        plt.axvline(peaktime[i-antennamin], color='r', label = 'Timepeak')
+        plt.xlabel('Time (ns)')
+        plt.ylabel('Amplitude (muV) (s)')
+        plt.legend(loc = 'best')
+        plt.show()
+
+    return peaktime, peakamplitude
 
 
 

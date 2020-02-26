@@ -277,7 +277,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
         }
 
         #TODO:URGENT all this should be replaced by the function already created in the hdf5io CreatAntennaInfo
-        a4=Column(data=IDs,name='ID',unit=u.m) #in core cordinates
+        a4=Column(data=IDs,name='ID') #in core cordinates
         b4=Column(data=antx,name='X',unit=u.m) #in core cordinates
         c4=Column(data=anty,name='Y',unit=u.m) #in core cordinates
         d4=Column(data=antz,name='Z',unit=u.m) #in core cordinates
