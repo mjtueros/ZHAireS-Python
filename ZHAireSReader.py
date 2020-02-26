@@ -20,8 +20,6 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     RunInfo=True            #it makes little sense not to have at least this
     EventInfo=True          #it makes little sense not to have at least this
     ShowerSimInfo=True      #it makes little sense not to have at least this
-    FileFormatVersion=0.0   #this should be in the hdf5io library
-    EventFormatVersion=0.0  #this should be in the hff5io library
 
     idffile=glob.glob(InputFolder+"/*.idf")
 
@@ -43,7 +41,9 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     filename=EventName+".hdf5"
     RunName=filename   #for now the name of the run is just the filename
 
-
+    #############################################################################################################################
+    # RUN INFO
+    #############################################################################################################################
     #Getting all the information i Need to create RunInfo
     EventNumber=0 #we are writing only one event per file for now
     Primary= AiresInfo.GetPrimaryFromSry(sryfile[0],"GRAND")
@@ -58,40 +58,17 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     HadronicModel=AiresInfo.GetHadronicModelFromSry(sryfile[0])
     InjectionAltitude=AiresInfo.GetInjectionAltitudeFromSry(sryfile[0])
 
-    #############################################################################################################################
-    # RUN INFO
-    #############################################################################################################################
-    #i save the variables in an astropy table in order to be able to store the units of the parameters in the meta, becouse if i save it as
-    # meta information i loose the capabaility of storing units.
-    # instead, i will use the meta to store which sections of the event are availale
     if(RunInfo):
-        #TODO: all this should be a function call (CreateRunInfo(...). And i have to find a way to add one line to an existing table  !
-        RunInfoMeta={
-            "FileFormatVersion":FileFormatVersion,
-            "RunName":RunName                        #for checking
-            #TODO: decide what else goes here
-        }
 
-        a=Column(data=[EventName],name='EventName')   #EventName, states the name of the Task of the simulation, that usually dictates the file names
-        b=Column(data=["N/A"],name='EventID')    #An event might have some ID?
-        c=Column(data=[Primary],name='Primary')
-        d=Column(data=[Energy],name='Energy',unit=u.EeV)
-        e=Column(data=[Zenith],name='Zenith',unit=u.deg)
-        f=Column(data=[Azimuth],name='Azimuth',unit=u.deg)
-        g=Column(data=[XmaxDistance],name='XmaxDistance',unit=u.m)
-        h=Column(data=[SlantXmax],name='SlantXmax',unit=u.g/(u.cm*u.cm))
-        i=Column(data=[HadronicModel],name='HadronicModel')
-        j=Column(data=[InjectionAltitude],name='InjectionAltitude',unit=u.m)
-        #Number of Triggered Efield Antennas?
-        #Number of Triggered Voltage Antennas?
-        #Number of Triggered Voltage+Filter Antennas?
+        RunInfoMeta=hdf5io.CreateRunInfoMeta(RunName)
 
-        AstropyTable = Table(data=(a,b,c,d,e,f,g,h,i,j),meta=RunInfoMeta)
+        RunInfoTable=hdf5io.CreateRunInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,SlantXmax,HadronicModel,InjectionAltitude,RunInfoMeta)
 
-        hdf5io.SaveRunInfo(filename,AstropyTable)
+        hdf5io.SaveRunInfo(filename,RunInfoTable)
 
-
-
+    #############################################################################################################################
+    # Event INFO
+    #############################################################################################################################
     #Getting all the information i need to create EventInfo
     GroundAltitude=AiresInfo.GetGroundAltitudeFromSry(sryfile[0])
     Site=AiresInfo.GetSiteFromSry(sryfile[0])
@@ -100,54 +77,17 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     AtmosphericModel=AiresInfo.GetAtmosphericModelFromSry(sryfile[0])
     EnergyInNeutrinos=AiresInfo.GetEnergyFractionInNeutrinosFromSry(sryfile[0])
     EnergyInNeutrinos=EnergyInNeutrinos*Energy
-    #############################################################################################################################
-    # Event INFO
-    #############################################################################################################################
     if(EventInfo):
-        #TODO: all this should be a function call (CreateEventInfo)
-        EventInfoMeta = {
-            "RunName":RunName,                         #for cross checking
-            "EventNumber":EventNumber,                 #Position in the RunInfo Table for easy access
-            "EventFormatVersion":EventFormatVersion,   #File Format of the Event (if it might be different)
-            "EventInfo": EventInfo,                    #event includes event info
-            "ShowerSimInfo":ShowerSimInfo,             #event includes shower simulation info
-            "SignalSimInfo":SignalSimInfo,             #event includes signal simulation info
-            "AntennaInfo":AntennaInfo,                 #event includes antenna info
-            "AntennaTraces":AntennaTraces,             #event includes the traces of each antenna
-            "NLongitudinal":NLongitudinal,             #event includes longitudinal tables of number of particles
-            "ELongitudinal":ELongitudinal,             #event includes longitudinal tables of energy
-            "NlowLongitudinal":NlowLongitudinal,       #event includes longitudinal tables of number discarded low energy particles
-            "ElowLongitudinal":ElowLongitudinal,       #event includes longitudinal tables of energy of discarded low energy particles
-            "EdepLongitudinal":EdepLongitudinal,       #event includes longitudinal tables of energy deposit
-            "LateralDistribution":LateralDistribution, #event includes tables of the lateral distribution of particles at ground
-            "EnergyDistribution":EnergyDistribution    #event includes tables of the enertgy distribution of particles at ground
-            #TODO: decide what else goes here
-        }
 
-        a1=Column(data=[EventName],name='EventName')   #EventName, states the name of the Task of the simulation, that usually dictates the file names
-        b1=Column(data=["N/A"],name='EventID')    #An event might have some ID?
-        c1=Column(data=[Primary],name='Primary')
-        d1=Column(data=[Energy],name='Energy',unit=u.EeV)
-        e1=Column(data=[Zenith],name='Zenith',unit=u.deg)
-        f1=Column(data=[Azimuth],name='Azimuth',unit=u.deg)
-        g1=Column(data=[XmaxDistance],name='XmaxDistance',unit=u.m)
-        h1=Column(data=[XmaxPosition],name='XmaxPosition',unit=u.m)
-        i1=Column(data=[XmaxAltitude],name='XmaxAltitude',unit=u.m)
-        j1=Column(data=[SlantXmax],name='SlantXmax',unit=u.g/(u.cm*u.cm))
-        k1=Column(data=[InjectionAltitude],name='InjectionAltitude',unit=u.m)
-        l1=Column(data=[GroundAltitude],name='GroundAltitude',unit=u.m)
-        m1=Column(data=[Site],name='Site')
-        n1=Column(data=[Date],name='Date')
-        o1=Column(data=[FieldIntensity],name='BField',unit=u.uT)
-        p1=Column(data=[FieldInclination],name='BFieldIncl',unit=u.deg)
-        q1=Column(data=[FieldDeclination],name='BFieldDecl',unit=u.deg)
-        r1=Column(data=[AtmosphericModel],name='AtmosphericModel')
-        s1=Column(data=["N/A"],name='AtmosphericModelParameters')
-        t1=Column(data=[EnergyInNeutrinos],name='EnergyInNeutrinos',unit=u.EeV)
-        AstropyTable = Table(data=(a1,b1,c1,d1,e1,f1,g1,h1,i1,j1,k1,l1,m1,n1,o1,p1,q1,r1,s1,t1),meta=EventInfoMeta)
+        EventInfoMeta=hdf5io.CreateEventInfoMeta(RunName,EventNumber,EventInfo,ShowerSimInfo,SignalSimInfo,AntennaInfo,AntennaTraces,NLongitudinal,ELongitudinal,NlowLongitudinal,ElowLongitudinal,EdepLongitudinal,LateralDistribution,EnergyDistribution)
 
-        hdf5io.SaveEventInfo(filename,AstropyTable,EventName)
-        #AstropyTable.write(filename, path=EventName+"/EventInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
+        EventInfo=hdf5io.CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta)
+
+        hdf5io.SaveEventInfo(filename,EventInfo,EventName)
+
+    #############################################################################################################################
+    # ShowerSimInfo (deals with the details for the simulation). This might be simulator-dependent (CoREAS has different parameters)
+    #############################################################################################################################
 
     #Getting the information i need for ShowerSimInfo
     ShowerSimulator=AiresInfo.GetAiresVersionFromSry(sryfile[0])
@@ -161,36 +101,13 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     MesonEnergyCut=AiresInfo.GetMesonEnergyCutFromSry(sryfile[0])
     NucleonEnergyCut=AiresInfo.GetNucleonEnergyCutFromSry(sryfile[0])
 
-    #############################################################################################################################
-    # ShowerSimInfo (deals with the details for the simulation). This might be simulator-dependent (CoREAS has different parameters)
-    #############################################################################################################################
     if(ShowerSimInfo):
-        #TODO: all this should be a function call (CreateShowerSimInfo(...))
-        ShowerSimInfoMeta = {
-            "RunName":RunName,                             #For cross checking
-            "EventName":EventName,                         #For cross checking
-            "ShowerSimulator": ShowerSimulator             #TODO: decide what goes here
-        }
 
-        a2=Column(data=[ShowerSimulator],name='ShowerSimulator')
-        b2=Column(data=[HadronicModel],name='HadonicModel')
-        c2=Column(data=[RandomSeed],name='RandomSeed')
-        d2=Column(data=[RelativeThinning],name='RelativeThining') #energy at wich thining starts, relative to the primary energy.
-        e2=Column(data=[WeightFactor],name='WeightFactor')
-        f2=Column(data=[GammaEnergyCut],name='GammaEnergyCut',unit=u.MeV)
-        g2=Column(data=[ElectronEnergyCut],name='ElectronEnergyCut',unit=u.MeV)
-        h2=Column(data=[MuonEnergyCut],name='MuonEnergyCut',unit=u.MeV)
-        i2=Column(data=[MesonEnergyCut],name='MesonEnergyCut',unit=u.MeV)
-        j2=Column(data=[NucleonEnergyCut],name='NucleonEnergyCut',unit=u.MeV)
-        k2=Column(data=["N/A"],name='OtherParameters')
+        ShowerSimInfoMeta=hdf5io.CreateShowerSimInfoMeta(RunName,EventName,ShowerSimulator)
 
-        AstropyTable = Table(data=(a2,b2,c2,d2,e2,f2,g2,h2,i2,j2,k2),meta=ShowerSimInfoMeta)
+        ShowerSimInfo=hdf5io.CreateShowerSimInfo(ShowerSimulator,HadronicModel,RandomSeed,RelativeThinning,WeightFactor,GammaEnergyCut,ElectronEnergyCut,MuonEnergyCut,MesonEnergyCut,NucleonEnergyCut,ShowerSimInfoMeta)
 
-
-        hdf5io.SaveShowerSimInfo(filename,AstropyTable,EventName)
-        #AstropyTable.write(filename, path=EventName+"/ShowerSimInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
-
-
+        hdf5io.SaveShowerSimInfo(filename,ShowerSimInfo,EventName)
 
     #############################################################################################################################
     # SignalSimInfo
@@ -205,29 +122,11 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
         TimeWindowMin=AiresInfo.GetTimeWindowMinFromSry(sryfile[0])
         TimeWindowMax=AiresInfo.GetTimeWindowMaxFromSry(sryfile[0])
 
-        #TODO: all this should be a function call (CreateSignalSimInfo(...))
-        SignalSimInfoMeta = {
-            "RunName":RunName,                             #For cross checking
-            "EventName":EventName,                         #For cross checking
-            "FieldSimulator": FieldSimulator,            #TODO: decide what goes here
-        }
+        SignalSimInfoMeta=hdf5io.CreateSignalSimInfoMeta(RunName,EventName,FieldSimulator)
 
-        a3=Column(data=[FieldSimulator],name='FieldSimulator')
-        b3=Column(data=[RefractionIndexModel],name='RefractionIndexModel')
-        c3=Column(data=[RefractionIndexParameters],name='RefractionIndexModelParameters')
-        d3=Column(data=[TimeBinSize],name='TimeBinSize',unit=u.ns)
-        e3=Column(data=[TimeWindowMin],name='TimeWindowMin',unit=u.ns)
-        f3=Column(data=[TimeWindowMax],name='TimeWindowMax',unit=u.ns)
-        g3=Column(data=["N/A"],name='OtherParameters')
-        #Number of Triggered Efield Antennas
-        #Number of Triggered Voltage Antennas
-        #Number of Triggered FilteredVoltage Antennas
+        SignalSimInfo=hdf5io.CreateSignalSimInfo(FieldSimulator,RefractionIndexModel,RefractionIndexParameters,TimeBinSize,TimeWindowMin,TimeWindowMax,SignalSimInfoMeta)
 
-        AstropyTable = Table(data=(a3,b3,c3,d3,e3,f3,g3),meta=SignalSimInfoMeta)
-
-        hdf5io.SaveSignalSimInfo(filename,AstropyTable,EventName)
-        #AstropyTable.write(filename, path=EventName+"/SignalSimInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
-
+        hdf5io.SaveSignalSimInfo(filename,SignalSimInfo,EventName)
 
     ################################################################################################################################
     # AntennaInfo
@@ -265,48 +164,24 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
             return -1
 
 
-        #TODO:URGENT all this should be replaced by the function already created in the hdf5io CreatAntennaInfoMeta
-        AntennaInfoMeta = {
-           "RunName":RunName,                             #For cross checking
-           "EventName":EventName,                         #For cross checking
-           "VoltageSimulator": "N/A",     #TODO: decide what goes here
-           "AntennaModel": "N/A",
-           "EnvironmentNoiseSimulator": "N/A",
-           "ElectronicsSimulator": "N/A",
-           "ElectronicsNoiseSimulator": "N/A"
-        }
+        AntennaInfoMeta= hdf5io.CreatAntennaInfoMeta(RunName,EventName)
 
-        #TODO:URGENT all this should be replaced by the function already created in the hdf5io CreatAntennaInfo
-        a4=Column(data=IDs,name='ID') #in core cordinates
-        b4=Column(data=antx,name='X',unit=u.m) #in core cordinates
-        c4=Column(data=anty,name='Y',unit=u.m) #in core cordinates
-        d4=Column(data=antz,name='Z',unit=u.m) #in core cordinates
-        e4=Column(data=slopeA,name='SlopeA',unit=u.m) #in core cordinates
-        f4=Column(data=slopeB,name='SlopeB',unit=u.m) #in core cordinates
+        AntennaInfo=hdf5io.CreateAntennaInfo(IDs, antx, anty, antz, slopeA, slopeB, AntennaInfoMeta)
 
-        #g4=Column(data=Ep2p,name='FieldP2P',unit=u.V/u.m) #p2p Value of the electric field #TODO:
-        #h4=Column(data=Ep2p,name='VoltageP2P',unit=u.V) #p2p Value of the electric field + antenna response #TODO:
-        #h4=Column(data=Ep2p,name='FilteredVoltageP2P',unit=u.V) #p2p Value of the electric field + antenna response + filtering #TODO:
-
-        AstropyTable = Table(data=(a4,b4,c4,d4,e4,f4),meta=AntennaInfoMeta)
-
-        hdf5io.SaveAntennaInfo(filename,AstropyTable,EventName)
-        #AstropyTable.write(filename, path=EventName+"/AntennaInfo", format="hdf5", append=True, compression=True,serialize_meta=True)
-
+        hdf5io.SaveAntennaInfo(filename,AntennaInfo,EventName)
 
     #################################################################################################################################
     # Individual Antennas (here comes the complicated part)
     #################################################################################################################################
     if(AntennaTraces):
-       #ZHAIRES DEPENDENT(all this should be part of the ZHAireS reader.
+       #ZHAIRES DEPENDENT
        ending_e = "/a*.trace"
        tracefiles=glob.glob(inputfolder+ending_e)
 
        if(len(tracefiles)==0):
          logging.critical("no trace files found in "+showerdirectory+" ZHAireSHDF5FileWriter cannot continue")
-         #return -1
+
        for ant in tracefiles:
-            #print("\n Read in data from ", ant)
 
             ant_number = int(ant.split('/')[-1].split('.trace')[0].split('a')[-1]) # index in selected antenna list. this only works if all antenna files are consecutive
 
@@ -316,18 +191,6 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
 
             efield = np.loadtxt(ant,dtype='f4') #we read the electric field as a numpy array
 
-            #From here on, this should be replaced by a function call to the HDF5 file io.(convert numpy to astropy and save)
-            #info={
-            #     'position': ant_position,
-            #     'slope': ant_slope}   #TODO: decide what goes here
-
-            #a = Column(data=efield.T[0],unit=u.ns,name='Time')
-            #b = Column(data=efield.T[1],unit=u.u*u.V/u.meter,name='Ex')
-            #c = Column(data=efield.T[2],unit=u.u*u.V/u.meter,name='Ey')
-            #d = Column(data=efield.T[3],unit=u.u*u.V/u.meter,name='Ez')
-            #efield_table = Table(data=(a,b,c,d,), meta=info)
-            #this should be another hdf5 function:
-            #efield_table.write(filename, path=EventName+"/AntennaTraces/"+str(ID)+"/efield", format="hdf5", append=True, compression=True,serialize_meta=True)
             efield=hdf5io.CreateEfieldTable(efield, EventName, EventNumber, ID, ant_number,FieldSimulator)
             hdf5io.SaveEfieldTable(filename,EventName,ID,efield)
 
@@ -373,7 +236,6 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(Na,Nb,Nc,Nd,Ne,Nf,Ng,Nh,Ni,Nj))
 
-        #AstropyTable.write(filename, path=EventName+"/ShowerTables/NLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
         hdf5io.SaveNLongitudinal(filename,AstropyTable,EventName)
     ##############################################################################################################################
     # Energy LONGITUDINAL TABLES (very important to veryfy the energy balance of the cascade, and to compute the invisible energy)
@@ -433,7 +295,6 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
         AstropyTable = Table(data=(Ea,Eb,Ec,Ed,Ee,Ef,Eg,Eh,Ei,Ej,Ek,El,Em,En))
 
         hdf5io.SaveELongitudinal(filename,AstropyTable,EventName)
-        #AstropyTable.write(filename, path=EventName+"/ShowerTables/ELongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
 
     ################################################################################################################################
     # NLowEnergy Longitudinal development
@@ -468,7 +329,6 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(Nla,Nlb,Nlc,Nld,Nle,Nlf,Nlg,Nlh))
 
-        #AstropyTable.write(filename, path=EventName+"/ShowerTables/NlowLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
         hdf5io.SaveNlowLongitudinal(filename,AstropyTable,EventName)
 
     ################################################################################################################################
@@ -540,7 +400,6 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(Eda,Edb,Edc,Edd,Ede,Edf,Edg,Edh))
 
-        #AstropyTable.write(filename, path=EventName+"/ShowerTables/EdepLongitudinalProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
         hdf5io.SaveEdepLongitudinal(filename,AstropyTable,EventName)
 
     ################################################################################################################################
@@ -570,7 +429,6 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
         #this might get to the hdf5io (later, it should be a method that adds individual tables as a new column, one at time, to make it easier later to add new columns)
         AstropyTable = Table(data=(La,Lb,Lc,Ld,Le,Lf,Lg))
 
-        #AstropyTable.write(filename, path=EventName+"/ShowerTables/NLateralProfile", format="hdf5", append=True, compression=True,serialize_meta=True)
         hdf5io.SaveLateralDistribution(filename,AstropyTable,EventName)
 
     ################################################################################################################################
@@ -607,26 +465,33 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
 
 if __name__ == '__main__':
 
-  if len(sys.argv)!=2:
-    print("Please point me to a directory with some ZHAires output, nothing more, nothing less!")
+  if (len(sys.argv)>3 or len(sys.argv)<2) :
+    print("Please point me to a directory with some ZHAires output, and indicate the mode...nothing more, nothing less!")
+    print("i.e ZHAireSReader ./MyshowerDir full")
+
+  elif len(sys.argv)==3 :
+    inputfolder=sys.argv[1]
+    mode=sys.argv[2]
+
+  elif len(sys.argv)==2 :
+    inputfolder=sys.argv[1]
+    mode="standard"
+
+
+  if(mode=="standard"):
+
+      ZHAiresReader(inputfolder)
+
+  elif(mode=="full"):
+
+      ZHAiresReader(inputfolder, SignalSimInfo=True, AntennaInfo=True, AntennaTraces=True, NLongitudinal=True, ELongitudinal=True, NlowLongitudinal=True, ElowLongitudinal=True, EdepLongitudinal=True, LateralDistribution=True, EnergyDistribution=True)
+
+  elif(mode=="minimal"):
+
+      ZHAiresReader(inputfolder, SignalSimInfo=False, AntennaInfo=False, AntennaTraces=False, NLongitudinal=False, ELongitudinal=False, NlowLongitudinal=False, ElowLongitudinal=False, EdepLongitudinal=False, LateralDistribution=False, EnergyDistribution=False)
+
 
   else:
 
-    inputfolder=sys.argv[1]
-
-    ZHAiresReader(inputfolder)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      printf("please enter one of these modes: standard, full or minimal")
 

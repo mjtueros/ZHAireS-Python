@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 ################################################################################################################################
 #### by M. Tueros. Shared with the Wineware licence. Support and feature requests accepted only accompanied by bottles of wine.
 ################################################################################################################################
+FileFormatVersion=0.0
+EventFormatVersion=0.0
 #this library provides a user interface and defines HDF5 file format for the GRAND experiment
 #
 # FILE FORMAT (0.0)
@@ -228,6 +230,39 @@ def GetSignalSimInfo(InputFilename,EventName):
    return SignalSimInfo
 
 #######################################################################################################################################################################
+# RunInfo Creator
+#######################################################################################################################################################################
+
+def CreateRunInfoMeta(RunName):
+    #TODO: Handle errors
+    RunInfoMeta={
+            "FileFormatVersion":FileFormatVersion,
+            "RunName":RunName                        #for checking
+            #TODO: decide what else goes here
+        }
+    return RunInfoMeta
+
+def CreateRunInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,SlantXmax,HadronicModel,InjectionAltitude,RunInfoMeta):
+
+    a=Column(data=[EventName],name='EventName')   #EventName, states the name of the Task of the simulation, that usually dictates the file names
+    b=Column(data=["N/A"],name='EventID')    #An event might have some ID?
+    c=Column(data=[Primary],name='Primary')
+    d=Column(data=[Energy],name='Energy',unit=u.EeV)
+    e=Column(data=[Zenith],name='Zenith',unit=u.deg)
+    f=Column(data=[Azimuth],name='Azimuth',unit=u.deg)
+    g=Column(data=[XmaxDistance],name='XmaxDistance',unit=u.m)
+    h=Column(data=[SlantXmax],name='SlantXmax',unit=u.g/(u.cm*u.cm))
+    i=Column(data=[HadronicModel],name='HadronicModel')
+    j=Column(data=[InjectionAltitude],name='InjectionAltitude',unit=u.m)
+    #Number of Triggered Efield Antennas?
+    #Number of Triggered Voltage Antennas?
+    #Number of Triggered Voltage+Filter Antennas?
+
+    RunInfo = Table(data=(a,b,c,d,e,f,g,h,i,j),meta=RunInfoMeta)
+
+    return RunInfo
+
+#######################################################################################################################################################################
 # RunInfo Getters
 #######################################################################################################################################################################
 
@@ -272,6 +307,59 @@ def GetEventHadronicModel(RunInfo,EventNumber):
     return str(RunInfo["HadronicModel"][EventNumber])
 
 #######################################################################################################################################################################
+# EventInfo Creators
+#######################################################################################################################################################################
+
+def CreateEventInfoMeta(RunName,EventNumber,EventInfo,ShowerSimInfo,SignalSimInfo,AntennaInfo,AntennaTraces,NLongitudinal,ELongitudinal,NlowLongitudinal,ElowLongitudinal,EdepLongitudinal,LateralDistribution,EnergyDistribution):
+
+    EventInfoMeta = {
+        "RunName":RunName,                         #for cross checking
+        "EventNumber":EventNumber,                 #Position in the RunInfo Table for easy access
+        "EventFormatVersion":EventFormatVersion,   #File Format of the Event (if it might be different)
+        "EventInfo": EventInfo,                    #event includes event info
+        "ShowerSimInfo":ShowerSimInfo,             #event includes shower simulation info
+        "SignalSimInfo":SignalSimInfo,             #event includes signal simulation info
+        "AntennaInfo":AntennaInfo,                 #event includes antenna info
+        "AntennaTraces":AntennaTraces,             #event includes the traces of each antenna
+        "NLongitudinal":NLongitudinal,             #event includes longitudinal tables of number of particles
+        "ELongitudinal":ELongitudinal,             #event includes longitudinal tables of energy
+        "NlowLongitudinal":NlowLongitudinal,       #event includes longitudinal tables of number discarded low energy particles
+        "ElowLongitudinal":ElowLongitudinal,       #event includes longitudinal tables of energy of discarded low energy particles
+        "EdepLongitudinal":EdepLongitudinal,       #event includes longitudinal tables of energy deposit
+        "LateralDistribution":LateralDistribution, #event includes tables of the lateral distribution of particles at ground
+        "EnergyDistribution":EnergyDistribution    #event includes tables of the enertgy distribution of particles at ground
+        #TODO: decide what else goes here
+        }
+    return EventInfoMeta
+
+def CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta):
+
+    a1=Column(data=[EventName],name='EventName')   #EventName, states the name of the Task of the simulation, that usually dictates the file names
+    b1=Column(data=["N/A"],name='EventID')    #An event might have some ID?
+    c1=Column(data=[Primary],name='Primary')
+    d1=Column(data=[Energy],name='Energy',unit=u.EeV)
+    e1=Column(data=[Zenith],name='Zenith',unit=u.deg)
+    f1=Column(data=[Azimuth],name='Azimuth',unit=u.deg)
+    g1=Column(data=[XmaxDistance],name='XmaxDistance',unit=u.m)
+    h1=Column(data=[XmaxPosition],name='XmaxPosition',unit=u.m)
+    i1=Column(data=[XmaxAltitude],name='XmaxAltitude',unit=u.m)
+    j1=Column(data=[SlantXmax],name='SlantXmax',unit=u.g/(u.cm*u.cm))
+    k1=Column(data=[InjectionAltitude],name='InjectionAltitude',unit=u.m)
+    l1=Column(data=[GroundAltitude],name='GroundAltitude',unit=u.m)
+    m1=Column(data=[Site],name='Site')
+    n1=Column(data=[Date],name='Date')
+    o1=Column(data=[FieldIntensity],name='BField',unit=u.uT)
+    p1=Column(data=[FieldInclination],name='BFieldIncl',unit=u.deg)
+    q1=Column(data=[FieldDeclination],name='BFieldDecl',unit=u.deg)
+    r1=Column(data=[AtmosphericModel],name='AtmosphericModel')
+    s1=Column(data=["N/A"],name='AtmosphericModelParameters')
+    t1=Column(data=[EnergyInNeutrinos],name='EnergyInNeutrinos',unit=u.EeV)
+
+    EventInfo = Table(data=(a1,b1,c1,d1,e1,f1,g1,h1,i1,j1,k1,l1,m1,n1,o1,p1,q1,r1,s1,t1),meta=EventInfoMeta)
+
+    return EventInfo
+
+#######################################################################################################################################################################
 # EventInfo Getters
 #######################################################################################################################################################################
 #TODO: define magnetic field units and coordinate frame propperly. Current implementation uses ZHAireS conventions, but this needs be standarized.
@@ -289,6 +377,66 @@ def GetGroundAltitude(EventInfo):
     return float(EventInfo["GroundAltitude"])
 
 #######################################################################################################################################################################
+# ShowerSim Creators
+#######################################################################################################################################################################
+
+def CreateShowerSimInfoMeta(RunName,EventName,ShowerSimulator):
+
+    ShowerSimInfoMeta = {
+        "RunName":RunName,                             #For cross checking
+        "EventName":EventName,                         #For cross checking
+        "ShowerSimulator": ShowerSimulator             #TODO: decide what goes here
+    }
+
+    return ShowerSimInfoMeta
+
+def CreateShowerSimInfo(ShowerSimulator,HadronicModel,RandomSeed,RelativeThinning,WeightFactor,GammaEnergyCut,ElectronEnergyCut,MuonEnergyCut,MesonEnergyCut,NucleonEnergyCut,ShowerSimInfoMeta):
+
+    a2=Column(data=[ShowerSimulator],name='ShowerSimulator')
+    b2=Column(data=[HadronicModel],name='HadonicModel')
+    c2=Column(data=[RandomSeed],name='RandomSeed')
+    d2=Column(data=[RelativeThinning],name='RelativeThining') #energy at wich thining starts, relative to the primary energy.
+    e2=Column(data=[WeightFactor],name='WeightFactor')
+    f2=Column(data=[GammaEnergyCut],name='GammaEnergyCut',unit=u.MeV)
+    g2=Column(data=[ElectronEnergyCut],name='ElectronEnergyCut',unit=u.MeV)
+    h2=Column(data=[MuonEnergyCut],name='MuonEnergyCut',unit=u.MeV)
+    i2=Column(data=[MesonEnergyCut],name='MesonEnergyCut',unit=u.MeV)
+    j2=Column(data=[NucleonEnergyCut],name='NucleonEnergyCut',unit=u.MeV)
+    k2=Column(data=["N/A"],name='OtherParameters')
+
+    ShowerSimInfo = Table(data=(a2,b2,c2,d2,e2,f2,g2,h2,i2,j2,k2),meta=ShowerSimInfoMeta)
+
+    return ShowerSimInfo
+
+#######################################################################################################################################################################
+# SignalSimInfo Creators
+#######################################################################################################################################################################
+def CreateSignalSimInfoMeta(RunName,EventName,FieldSimulator):
+    SignalSimInfoMeta = {
+        "RunName":RunName,                             #For cross checking
+        "EventName":EventName,                         #For cross checking
+        "FieldSimulator": FieldSimulator,            #TODO: decide what goes here
+    }
+    return SignalSimInfoMeta
+
+def CreateSignalSimInfo(FieldSimulator,RefractionIndexModel,RefractionIndexParameters,TimeBinSize,TimeWindowMin,TimeWindowMax,SignalSimInfoMeta):
+
+    a3=Column(data=[FieldSimulator],name='FieldSimulator')
+    b3=Column(data=[RefractionIndexModel],name='RefractionIndexModel')
+    c3=Column(data=[RefractionIndexParameters],name='RefractionIndexModelParameters')
+    d3=Column(data=[TimeBinSize],name='TimeBinSize',unit=u.ns)
+    e3=Column(data=[TimeWindowMin],name='TimeWindowMin',unit=u.ns)
+    f3=Column(data=[TimeWindowMax],name='TimeWindowMax',unit=u.ns)
+    g3=Column(data=["N/A"],name='OtherParameters')
+    #Number of Triggered Efield Antennas
+    #Number of Triggered Voltage Antennas
+    #Number of Triggered FilteredVoltage Antennas
+
+    SignalSimInfo = Table(data=(a3,b3,c3,d3,e3,f3,g3),meta=SignalSimInfoMeta)
+
+    return SignalSimInfo
+
+#######################################################################################################################################################################
 # SignalSimInfo Getters
 #######################################################################################################################################################################
 def GetTimeBinSize(SignalSimInfo):
@@ -303,9 +451,9 @@ def GetTimeWindowMax(SignalSimInfo):
    #TODO: Handle errors
     return float(SignalSimInfo["TimeWindowMax"])
 
-#######################################################################################################################################################################
-# AntennaInfo Getters
-#######################################################################################################################################################################
+####################################################################################################################################################################################
+#AntennaInfo Creators
+####################################################################################################################################################################################
 
 def CreatAntennaInfoMeta(RunName,EventName,VoltageSimulator="N/A",AntennaModel="N/A",EnvironmentNoiseSimulator="N/A",ElectronicsSimulator="N/A",ElectronicsNoiseSimulator="N/A"):
    #TODO: Handle errors
@@ -386,7 +534,58 @@ def CreateAntennaInfo(IDs, antx, anty, antz, slopeA, slopeB, AntennaInfoMeta, P2
     AstropyTable = Table(data=data,meta=AntennaInfoMeta)
     return AstropyTable
 
+####################################################################################################################################################################################
+#AntennaInfo Getters
+####################################################################################################################################################################################
 
+def GetNumberOfAntennas(AntennaInfo):
+   #TODO: Handle errors
+    return len(AntennaInfo)
+
+def GetAntIDFromAntennaInfo(AntennaInfo):
+   #TODO: Handle errors
+   return AntennaInfo["ID"]
+
+def GetXFromAntennaInfo(AntennaInfo):
+   #TODO: Handle errors
+   return AntennaInfo["X"]
+
+def GetYFromAntennaInfo(AntennaInfo):
+   #TODO: Handle errors
+   return AntennaInfo["Y"]
+
+def GetZFromAntennaInfo(AntennaInfo):
+   #TODO: Handle errors
+   return AntennaInfo["Z"]
+
+def GetSlopesFromTrace(Trace):
+   return Trace.meta['slopes']
+
+def GetAntennaID(AntennaInfo,AntennaNumber):
+   #TODO: Handle errors
+    return AntennaInfo["ID"][AntennaNumber]
+
+def GetAntennaPosition(AntennaInfo,AntennaNumber):
+   #TODO: Handle errors
+    return (AntennaInfo["X"][AntennaNumber],AntennaInfo["Y"][AntennaNumber],AntennaInfo["Z"][AntennaNumber])
+
+def GetAntennaSlope(AntennaInfo,AntennaNumber):
+   #TODO: Handle errors
+    return (AntennaInfo["SlopeA"][AntennaNumber] ,AntennaInfo["SlopeB"][AntennaNumber])
+
+def GetAntennaPositions(AntennaInfo):
+   #TODO: Handle errors
+    return (AntennaInfo["X"][:],AntennaInfo["Y"][:],AntennaInfo["Z"][:])
+
+def GetMetaFromTable(AstropyTable):
+   return AstropyTable.meta
+
+def GetAntennaInfoFromEventInfo(EventInfo,nant):
+   return EventInfo[nant]
+
+####################################################################################################################################################################################
+#AntennaP2PInfo Creators
+####################################################################################################################################################################################
 def CreateAntennaP2PInfo(IDs, AntennaInfoMeta, P2Pefield=None,P2Pvoltage=None,P2Pfiltered=None,HilbertPeakE=None,HilbertPeakV=None,HilbertPeakFV=None,HilbertPeakTimeE=None,HilbertPeakTimeV=None,HilbertPeakTimeFV=None):
    #TODO: Handle errors
     a4=Column(data=IDs,name='ID')
@@ -471,52 +670,8 @@ def CreateAntennaP2PInfo(IDs, AntennaInfoMeta, P2Pefield=None,P2Pvoltage=None,P2
     AstropyTable = Table(data=data,meta=AntennaInfoMeta)
     return AstropyTable
 
-
-def GetNumberOfAntennas(AntennaInfo):
-   #TODO: Handle errors
-    return len(AntennaInfo)
-
-def GetAntIDFromAntennaInfo(AntennaInfo):
-   #TODO: Handle errors
-   return AntennaInfo["ID"]
-
-def GetXFromAntennaInfo(AntennaInfo):
-   #TODO: Handle errors
-   return AntennaInfo["X"]
-
-def GetYFromAntennaInfo(AntennaInfo):
-   #TODO: Handle errors
-   return AntennaInfo["Y"]
-
-def GetZFromAntennaInfo(AntennaInfo):
-   #TODO: Handle errors
-   return AntennaInfo["Z"]
-
-def GetSlopesFromTrace(Trace):
-   return Trace.meta['slopes']
-
-def GetAntennaID(AntennaInfo,AntennaNumber):
-   #TODO: Handle errors
-    return AntennaInfo["ID"][AntennaNumber]
-
-def GetAntennaPosition(AntennaInfo,AntennaNumber):
-   #TODO: Handle errors
-    return (AntennaInfo["X"][AntennaNumber],AntennaInfo["Y"][AntennaNumber],AntennaInfo["Z"][AntennaNumber])
-
-def GetAntennaSlope(AntennaInfo,AntennaNumber):
-   #TODO: Handle errors
-    return (AntennaInfo["SlopeA"][AntennaNumber] ,AntennaInfo["SlopeB"][AntennaNumber])
-
-def GetAntennaPositions(AntennaInfo):
-   #TODO: Handle errors
-    return (AntennaInfo["X"][:],AntennaInfo["Y"][:],AntennaInfo["Z"][:])
-
-def GetMetaFromTable(AstropyTable):
-   return AstropyTable.meta
-
-def GetAntennaInfoFromEventInfo(EventInfo,nant):
-   return EventInfo[nant]
-
+########################################################################################################################
+# Create and Save traces
 ########################################################################################################################
 
 def CreateEfieldTable(efield, EventName, EventNumber, AntennaID, AntennaNumber,FieldSimulator, info={}):
