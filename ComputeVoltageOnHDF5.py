@@ -17,7 +17,7 @@ logging.basicConfig(level=logging.DEBUG)
 #this computes the voltage on all the antennas, but if this gets too CPU intense in some application we might want to apply some filter,
 #that could go in the funnction call like...such as only compute if the peak to peak amplitude is higher than something, or the distance to the core is less than something,etc.
 
-def ComputeVoltageOnHDF5(inputfilename,EventNumber=0,FreqMin=50.e6,FreqMax=200.e6,outfilename="N/A"):
+def ComputeVoltageOnHDF5(inputfilename,EventNumber=0,FreqMin=100.e6,FreqMax=180.e6,outfilename="N/A"):
 #EventNumber=all could trigger a loop on all events in the file.
 
   if os.path.isfile(inputfilename):

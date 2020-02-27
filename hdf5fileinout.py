@@ -875,8 +875,12 @@ def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, use
       hilbert_trace=hilbert(trace[:,1:4])
       hilbert_amp = np.abs(hilbert_trace) 												                     #enveloppe de hilbert x, y, z channels
       peakamplitude[i-antennamin]=max([max(hilbert_amp[:,0]), max(hilbert_amp[:,1]), max(hilbert_amp[:,2])]) #find best peakamp for the 3 channels
-      peaktime[i-antennamin]=trace[np.where(hilbert_amp == peakamplitude[i-antennamin])[0],0]                # get the time of the peak amplitude
-
+      peakamplitudelocation=np.where(hilbert_amp == peakamplitude[i-antennamin])
+      #this is to assure that there is a maximum amplitude, at that its unique, and that it could be found
+      if(peakamplitude[i-antennamin]!=0.0 and np.shape(peakamplitudelocation)==(2,1)):
+        peaktime[i-antennamin]=trace[peakamplitudelocation[0],0]                # get the time of the peak amplitude
+      else:
+        peaktime[i-antennamin]=-1e20
 
       #PLOT
       if DISPLAY :
