@@ -44,7 +44,7 @@ def ComputePeak2PeakOnHDF5(InputFilename,OutputFilename="N/A"):
     hdf5io.SaveAntennaP2PInfo(OutputFilename,AntennaP2PInfo,EventName)
 
   else:
-   logging.critical("input file " + inputfilename + " does not exist or is not a directory. ComputePeak2PeakOnSHDF5 cannot continue")
+   logging.critical("input file " + InputFilename + " does not exist or is not a directory. ComputePeak2PeakOnSHDF5 cannot continue")
 
 
 if __name__ == '__main__':
