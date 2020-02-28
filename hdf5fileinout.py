@@ -34,7 +34,7 @@ EventFormatVersion=0.0
 #=============================
 # SignalSimInfo (AstropyTable)
 #=============================
-# containing details on the electric field computation: index of refraction model, tmin, tmax, tbin (this would be the meta of the antenalist)
+# containing details on the electric field computation: index of refraction model, tmin, tbin (this would be the meta of the antenalist)
 #=============================
 # AntennaInfo (AstropyTable)
 #=============================
@@ -180,6 +180,14 @@ def GetAntennaInfo4(InputFilename,EventName):
    #TODO: Handle error when "InputFilename" is not a file, or a valid file.
    AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaInfo4")
    return AntennaInfo
+
+def GetAntennaP2PInfo(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/AntennaInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaP2PInfo")
+   return AntennaInfo
+
 
 def GetAntennaEfield(InputFilename,EventName,AntennaName,OutputFormat="numpy"):
    #TODO: Handle error when "EventName" does not exists
@@ -390,7 +398,7 @@ def CreateShowerSimInfoMeta(RunName,EventName,ShowerSimulator):
 
     return ShowerSimInfoMeta
 
-def CreateShowerSimInfo(ShowerSimulator,HadronicModel,RandomSeed,RelativeThinning,WeightFactor,GammaEnergyCut,ElectronEnergyCut,MuonEnergyCut,MesonEnergyCut,NucleonEnergyCut,ShowerSimInfoMeta):
+def CreateShowerSimInfo(ShowerSimulator,HadronicModel,RandomSeed,RelativeThinning,WeightFactor,GammaEnergyCut,ElectronEnergyCut,MuonEnergyCut,MesonEnergyCut,NucleonEnergyCut,CPUTime,ShowerSimInfoMeta):
 
     a2=Column(data=[ShowerSimulator],name='ShowerSimulator')
     b2=Column(data=[HadronicModel],name='HadonicModel')
@@ -402,9 +410,10 @@ def CreateShowerSimInfo(ShowerSimulator,HadronicModel,RandomSeed,RelativeThinnin
     h2=Column(data=[MuonEnergyCut],name='MuonEnergyCut',unit=u.MeV)
     i2=Column(data=[MesonEnergyCut],name='MesonEnergyCut',unit=u.MeV)
     j2=Column(data=[NucleonEnergyCut],name='NucleonEnergyCut',unit=u.MeV)
-    k2=Column(data=["N/A"],name='OtherParameters')
+    k2=Column(data=[CPUTime],name='CPUTime',unit=u.s)
+    l2=Column(data=["N/A"],name='OtherParameters')
 
-    ShowerSimInfo = Table(data=(a2,b2,c2,d2,e2,f2,g2,h2,i2,j2,k2),meta=ShowerSimInfoMeta)
+    ShowerSimInfo = Table(data=(a2,b2,c2,d2,e2,f2,g2,h2,i2,j2,k2,l2),meta=ShowerSimInfoMeta)
 
     return ShowerSimInfo
 

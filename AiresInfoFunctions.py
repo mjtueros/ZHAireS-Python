@@ -671,6 +671,33 @@ def GetTotalCPUTimeFromSry(sry_file,outmode="N/A"):
           stripedline=line.split(':',-1)
           CPUtime=stripedline[len(stripedline)-1]
           #logging.debug("Found taskname " + taskname)
+
+
+          CPUTime=CPUTime.replace('\n','')
+          stripedline=CPUTime.split(' ',-1)
+          time=0.0
+          if(len(stripedline)>1):
+            if(stripedline[-1]=="sec"):
+              time=time+float(stripedline[-2])
+            if(stripedline[-1]=="min"):
+              time=time+60.0*int(stripedline[-2])
+            if(stripedline[-1]=="hr"):
+              time=time+60.0*60.0*int(stripedline[-2])
+          if(len(stripedline)>3):
+            if(stripedline[-3]=="sec"):
+              time=time+float(stripedline[-4])
+            if(stripedline[-3]=="min"):
+              time=time+60.0*int(stripedline[-4])
+            if(stripedline[-3]=="hr"):
+              time=time+60.0*60.0*int(stripedline[-4])
+          if(len(stripedline)>5):
+            if(stripedline[-5]=="sec"):
+              time=time + float(stripedline[-6])
+            if(stripedline[-5]=="min"):
+              time=time + 60.0*int(stripedline[-6])
+            if(stripedline[-5]=="hr"):
+              time=time + 60.0*60.0*int(stripedline[-6])
+          CPUtime=time
           return CPUtime
       try:
         CPUtime
