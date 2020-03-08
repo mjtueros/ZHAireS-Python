@@ -1,10 +1,6 @@
 import os
 import sys
 import logging
-
-#root_dir = os.path.realpath(os.path.join(os.path.split(__file__)[0], "../radio-simus")) # = $PROJECT
-root_dir="/home/mjtueros/GRAND/GP300/azillesnana/radio-simus"
-sys.path.append(os.path.join(root_dir, "lib", "python"))
 import hdf5fileinout as hdf5io
 
 logging.basicConfig(level=logging.DEBUG)

@@ -1,3 +1,6 @@
+#if you are having encoding errors, specially in lyon, be sure to force the environment to utf8
+#setenv  LANGUAGE en_US.UTF-8 ;setenv  LC_ALL en_US.UTF-8 ;setenv  LANG en_US.UTF-8setenv LC_TYPE en_US.UTF-8
+#
 
 #this functions will accept GRAND and AIRES outmode, to give the results in each convention
 #it will output the primary zen,azim,energy,primarytype, taken from the .inp file present at input_file_path) (assumed only one .inp file per dir)
@@ -37,7 +40,7 @@ import logging
 #but it adds modularity, and closes the files when it does not use it any more.
 #If at some point we need speed, then we could input datafile, and make a wraper for opening the file
 
-AiresPath="/home/mjtueros/aires/bin"
+AiresPath="/sps/hep/trend/software/Aires-19-04-00-ZHAireS-1.0.27/aires/bin/"
 
 def GetZenithAngleFromSry(sry_file,outmode="GRAND"):
   try:
@@ -61,7 +64,7 @@ def GetZenithAngleFromSry(sry_file,outmode="GRAND"):
         logging.info("Zenith Angle not found in sry file, defaulting to:" + str(zen))
         return zen
   except:
-    logging.error("GetZenithAngleFromSry:file not found or invalid:"+sry_file)
+    logging.error("GetZenithAngleFromSry:file not found? or invalid:"+sry_file)
     raise
     return -1
 
@@ -436,6 +439,7 @@ def GetKmXmaxFromSry(sry_file,outmode="N/A"): #To do. Handle when Xmax is not fo
     return -1
 
 def GetTaskNameFromSry(sry_file,outmode="N/A"):
+  datafile=open(sry_file,'r')
   try:
     datafile=open(sry_file,'r')
     with open(sry_file, "r") as datafile:
@@ -445,7 +449,7 @@ def GetTaskNameFromSry(sry_file,outmode="N/A"):
           stripedline=line.split(' ',-1)
           taskname=stripedline[len(stripedline)-1]
           taskname=taskname.replace('\n','')
-          #logging.debug("Found taskname " + taskname)
+          logging.debug("Found taskname " + taskname)
           if '...' in taskname:
             base=os.path.basename(sry_file)
             taskname=os.path.splitext(base)[0]
@@ -459,7 +463,7 @@ def GetTaskNameFromSry(sry_file,outmode="N/A"):
         logging.error('warning taskname not found, Aires has no default value, cannot continue')
         exit()
   except:
-    logging.error("GetZenithAngleFromSry:file not found or invalid:"+sry_file)
+    logging.error("GetTaskNameFromSry:file not found or invalid:"+sry_file)
     raise
     return -1
 

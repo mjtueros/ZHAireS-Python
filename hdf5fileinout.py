@@ -2,7 +2,9 @@
 from astropy.table import Table, Column
 from astropy import units as u
 import numpy as np
-import matplotlib.pyplot as plt
+#import matplotlib as mpl
+#mpl.use('Agg')
+#import matplotlib.pyplot as plt
 
 
 ################################################################################################################################
@@ -882,54 +884,54 @@ def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, use
       else:
         peaktime[i-antennamin]=-1e20
 
-      #PLOT
-      if DISPLAY :
-        print(peakamplitude[i-antennamin])
-        print('peaktime = ',peaktime[i-antennamin])
-
-        hilbert_trace_x=hilbert(trace[:,1])
-        hilbert_amp_x = np.abs(hilbert_trace_x)
-        hilbert_trace_y=hilbert(trace[:,2])
-        hilbert_amp_y = np.abs(hilbert_trace_y)
-        hilbert_trace_z=hilbert(trace[:,3])
-        hilbert_amp_z = np.abs(hilbert_trace_z)
-
-        hilbert_amp2=np.zeros(np.shape(trace[:,1:4]))
-        hilbert_amp2[:,0]=hilbert_amp_x
-        hilbert_amp2[:,1]=hilbert_amp_y
-        hilbert_amp2[:,2]=hilbert_amp_z
-        #peakamplitude[i-antennamin]=max([max(hilbert_amp2[:,0]), max(hilbert_amp2[:,1]), max(hilbert_amp2[:,2])]) #find best peakamp for the 3 channels
-        #peaktime[i-antennamin]=trace[np.where(hilbert_amp2 == peakamplitude[i-antennamin])[0],0]                # get the time of the peak amplitude
-
-
-        fig1 = plt.figure(1,figsize=(7,5), dpi=100, facecolor='w', edgecolor='k')
-
-        ax1=fig1.add_subplot(221)
-        plt.plot(trace[:,0], hilbert_amp[:,0], label = 'Hilbert env channel x')
-        plt.plot(trace[:,0], trace[:,1], label = 'channel x')
-        plt.plot(trace[:,0], hilbert_amp_x, label = 'Hilbertx env channel x')
-
-        plt.legend(loc = 'best')
-
-        ax1=fig1.add_subplot(222)
-        plt.plot(trace[:,0], hilbert_amp[:,1], label = 'Hilbert env channel y')
-        plt.plot(trace[:,0], trace[:,2], label = 'channel y')
-        plt.plot(trace[:,0], hilbert_amp_y, label = 'Hilbertx env channel y')
-        plt.legend(loc = 'best')
-
-        ax1=fig1.add_subplot(223)
-        plt.plot(trace[:,0], hilbert_amp[:,2], label = 'Hilbert env channel z')
-        plt.plot(trace[:,0], trace[:,3], label = 'channel z')
-        plt.plot(trace[:,0], hilbert_amp_z, label = 'Hilbertx env channel z')
-        plt.legend(loc = 'best')
-
-        ax1=fig1.add_subplot(224)
-        plt.plot(trace[:,0], np.sqrt(trace[:,1]**2 + trace[:,2]**2 + trace[:,3]**2), label = 'modulus signal')
-        plt.axvline(peaktime[i-antennamin], color='r', label = 'Timepeak')
-        plt.xlabel('Time (ns)')
-        plt.ylabel('Amplitude (muV) (s)')
-        plt.legend(loc = 'best')
-        plt.show()
+#      #PLOT
+#      if DISPLAY :
+#        print(peakamplitude[i-antennamin])
+#        print('peaktime = ',peaktime[i-antennamin])
+#
+#        hilbert_trace_x=hilbert(trace[:,1])
+#        hilbert_amp_x = np.abs(hilbert_trace_x)
+#        hilbert_trace_y=hilbert(trace[:,2])
+#        hilbert_amp_y = np.abs(hilbert_trace_y)
+#        hilbert_trace_z=hilbert(trace[:,3])
+#        hilbert_amp_z = np.abs(hilbert_trace_z)
+#
+#        hilbert_amp2=np.zeros(np.shape(trace[:,1:4]))
+#        hilbert_amp2[:,0]=hilbert_amp_x
+#        hilbert_amp2[:,1]=hilbert_amp_y
+#        hilbert_amp2[:,2]=hilbert_amp_z
+#        #peakamplitude[i-antennamin]=max([max(hilbert_amp2[:,0]), max(hilbert_amp2[:,1]), max(hilbert_amp2[:,2])]) #find best peakamp for the 3 channels
+#        #peaktime[i-antennamin]=trace[np.where(hilbert_amp2 == peakamplitude[i-antennamin])[0],0]                # get the time of the peak amplitude
+#
+#
+#        fig1 = plt.figure(1,figsize=(7,5), dpi=100, facecolor='w', edgecolor='k')
+#
+#        ax1=fig1.add_subplot(221)
+#        plt.plot(trace[:,0], hilbert_amp[:,0], label = 'Hilbert env channel x')
+#        plt.plot(trace[:,0], trace[:,1], label = 'channel x')
+#        plt.plot(trace[:,0], hilbert_amp_x, label = 'Hilbertx env channel x')
+#
+#        plt.legend(loc = 'best')
+#
+#        ax1=fig1.add_subplot(222)
+#        plt.plot(trace[:,0], hilbert_amp[:,1], label = 'Hilbert env channel y')
+#        plt.plot(trace[:,0], trace[:,2], label = 'channel y')
+#        plt.plot(trace[:,0], hilbert_amp_y, label = 'Hilbertx env channel y')
+#        plt.legend(loc = 'best')
+#
+#        ax1=fig1.add_subplot(223)
+#        plt.plot(trace[:,0], hilbert_amp[:,2], label = 'Hilbert env channel z')
+#        plt.plot(trace[:,0], trace[:,3], label = 'channel z')
+#        plt.plot(trace[:,0], hilbert_amp_z, label = 'Hilbertx env channel z')
+#        plt.legend(loc = 'best')
+#
+#        ax1=fig1.add_subplot(224)
+#        plt.plot(trace[:,0], np.sqrt(trace[:,1]**2 + trace[:,2]**2 + trace[:,3]**2), label = 'modulus signal')
+#        plt.axvline(peaktime[i-antennamin], color='r', label = 'Timepeak')
+#        plt.xlabel('Time (ns)')
+#        plt.ylabel('Amplitude (muV) (s)')
+#        plt.legend(loc = 'best')
+#        plt.show()
 
     return peaktime, peakamplitude
 

@@ -3,8 +3,13 @@ import os
 import sys
 import numpy as np
 import random
+#import matplotlib.pyplot as plt #in lyon you dont need to plot (and it will crash cos it cannot open the display
+#from mpl_toolkits.mplot3d import Axes3D #
+#other, nore elegant solution:
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+
 
 
 #This function generates the star shape positions for antennas on a slope, or on flat ground
@@ -189,74 +194,74 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
 
         file.close()
 
-    if DISPLAY:
-
-      for i in np.arange(nant*8):
-        xyz2[i]=GetUVW(xyz[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
-
-
-      shower=np.zeros([200,3])
-      mount_u=np.zeros([200,3])
-      mount_v=np.zeros([200,3])
-      for i in np.arange(0,200):
-        shower[i]= (i-100)*100 *a +r0
-        mount_u[i]= (i-100)*100 *u +r0
-        mount_v[i]= (i-100)*100 *v +r0
-      fig1=plt.figure(1, figsize=(12, 10), dpi=120, facecolor='w', edgecolor='k')
-      title="zen_G="+str(zen_rad*radtodeg) + " az_G="+str(az_rad*radtodeg) + " slope=" +str(alpha*radtodeg)
-      fig1.suptitle(title, fontsize=16)
-
-      #plt.subplot(221)
-
-      #plt.scatter(xyz[:,0],xyz[:,1], c='red')
-      #plt.scatter(shower[:,0],shower[:,1], c='blue')
-
-      #plt.xlabel(r"x")
-      #plt.ylabel(r"y") #, fontsize=16
-      #plt.axis('equal')
-
-      #######
-      #plt.subplot(222)
-      #ax=plt.plot()
-
-      #plt.scatter(xyz[:,0],xyz[:,2], c='red', label="antennas")
-      #plt.scatter(shower[:,0],shower[:,2], c='blue', label="shower axis")
-      #plt.xlabel(r"x")
-      #plt.ylabel(r"z") #, fontsize=16
-      #plt.axis('equal')
-      #plt.plot([min(shower[:,0]), max(shower[:,0])], [h_ulas, h_ulas], 'k-', label="Ulastai height")
-      #plt.legend(loc='best')
-
-      #plt.show()
-
-      #######
-      #plt.subplot(121)
-      #ax=plt.plot()
-      #plt.scatter(xyz1[:,1],xyz1[:,2], c='green') # produce star shape pattern
-      #plt.scatter(xyz2[:,1],xyz2[:,2], c='yellow') # back transformed star shape pattern
-##     plt.scatter(shower[:,1],shower[:,2], c='blue')
-      #plt.xlabel(r"vxB - back trafo ")
-      #plt.ylabel(r"vxvxB - back trafo") #, fontsize=16
-      #plt.axis('equal')
-      #######
-      #plt.subplot(122)
-      #ax = fig1.add_subplot(224, projection='3d')
-      plt.subplot(111)
-      ax = fig1.add_subplot(111, projection='3d')
-
-      ax.scatter(xyz1[:,0],xyz1[:,1],xyz1[:,2], c='green') # produced star shape
-      ax.scatter(xyz[:,0],xyz[:,1],xyz[:,2], c='red')  # projected
-      ax.scatter(shower[:,0],shower[:,1],shower[:,2], c='blue')  # shower
-      ax.scatter(mount_u[:,0],mount_u[:,1],mount_u[:,2], c='black')  # mountain
-      ax.scatter(mount_v[:,0],mount_v[:,1],mount_v[:,2], c='black')  # mountain
-      #ax.scatter(xyz3[:,0],xyz3[:,1],xyz3[:,2], c='yellow') # backtransformed
-
-      plt.axis('equal')
-      plt.xlabel(r"x ")
-      plt.ylabel(r"y") #, fontsize=16
-      #plt.zlabel(r"z") #, fontsize=16
-
-      plt.show()
+#    if DISPLAY:
+#
+#      for i in np.arange(nant*8):
+#        xyz2[i]=GetUVW(xyz[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
+#
+#
+#      shower=np.zeros([200,3])
+#      mount_u=np.zeros([200,3])
+#      mount_v=np.zeros([200,3])
+#      for i in np.arange(0,200):
+#        shower[i]= (i-100)*100 *a +r0
+#        mount_u[i]= (i-100)*100 *u +r0
+#        mount_v[i]= (i-100)*100 *v +r0
+#      fig1=plt.figure(1, figsize=(12, 10), dpi=120, facecolor='w', edgecolor='k')
+#      title="zen_G="+str(zen_rad*radtodeg) + " az_G="+str(az_rad*radtodeg) + " slope=" +str(alpha*radtodeg)
+#      fig1.suptitle(title, fontsize=16)
+#
+#      #plt.subplot(221)
+#
+#      #plt.scatter(xyz[:,0],xyz[:,1], c='red')
+#      #plt.scatter(shower[:,0],shower[:,1], c='blue')
+#
+#      #plt.xlabel(r"x")
+#      #plt.ylabel(r"y") #, fontsize=16
+#      #plt.axis('equal')
+#
+#      #######
+#      #plt.subplot(222)
+#      #ax=plt.plot()
+#
+#      #plt.scatter(xyz[:,0],xyz[:,2], c='red', label="antennas")
+#      #plt.scatter(shower[:,0],shower[:,2], c='blue', label="shower axis")
+#      #plt.xlabel(r"x")
+#      #plt.ylabel(r"z") #, fontsize=16
+#      #plt.axis('equal')
+#      #plt.plot([min(shower[:,0]), max(shower[:,0])], [h_ulas, h_ulas], 'k-', label="Ulastai height")
+#      #plt.legend(loc='best')
+#
+#      #plt.show()
+#
+#      #######
+#      #plt.subplot(121)
+#      #ax=plt.plot()
+#      #plt.scatter(xyz1[:,1],xyz1[:,2], c='green') # produce star shape pattern
+#      #plt.scatter(xyz2[:,1],xyz2[:,2], c='yellow') # back transformed star shape pattern
+###     plt.scatter(shower[:,1],shower[:,2], c='blue')
+#      #plt.xlabel(r"vxB - back trafo ")
+#      #plt.ylabel(r"vxvxB - back trafo") #, fontsize=16
+#      #plt.axis('equal')
+#      #######
+#      #plt.subplot(122)
+#      #ax = fig1.add_subplot(224, projection='3d')
+#      plt.subplot(111)
+#      ax = fig1.add_subplot(111, projection='3d')
+#
+#      ax.scatter(xyz1[:,0],xyz1[:,1],xyz1[:,2], c='green') # produced star shape
+#      ax.scatter(xyz[:,0],xyz[:,1],xyz[:,2], c='red')  # projected
+#      ax.scatter(shower[:,0],shower[:,1],shower[:,2], c='blue')  # shower
+#      ax.scatter(mount_u[:,0],mount_u[:,1],mount_u[:,2], c='black')  # mountain
+#      ax.scatter(mount_v[:,0],mount_v[:,1],mount_v[:,2], c='black')  # mountain
+#      #ax.scatter(xyz3[:,0],xyz3[:,1],xyz3[:,2], c='yellow') # backtransformed
+#
+#      plt.axis('equal')
+#      plt.xlabel(r"x ")
+#      plt.ylabel(r"y") #, fontsize=16
+#      #plt.zlabel(r"z") #, fontsize=16
+#
+#      plt.show()
 
 def mag(x):
     y=0
