@@ -100,12 +100,14 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     MuonEnergyCut=AiresInfo.GetMuonEnergyCutFromSry(sryfile[0])
     MesonEnergyCut=AiresInfo.GetMesonEnergyCutFromSry(sryfile[0])
     NucleonEnergyCut=AiresInfo.GetNucleonEnergyCutFromSry(sryfile[0])
+    CPUTime=AiresInfo.GetTotalCPUTimeFromSry(sryfile[0],"N/A")
+
 
     if(ShowerSimInfo):
 
         ShowerSimInfoMeta=hdf5io.CreateShowerSimInfoMeta(RunName,EventName,ShowerSimulator)
 
-        ShowerSimInfo=hdf5io.CreateShowerSimInfo(ShowerSimulator,HadronicModel,RandomSeed,RelativeThinning,WeightFactor,GammaEnergyCut,ElectronEnergyCut,MuonEnergyCut,MesonEnergyCut,NucleonEnergyCut,ShowerSimInfoMeta)
+        ShowerSimInfo=hdf5io.CreateShowerSimInfo(ShowerSimulator,HadronicModel,RandomSeed,RelativeThinning,WeightFactor,GammaEnergyCut,ElectronEnergyCut,MuonEnergyCut,MesonEnergyCut,NucleonEnergyCut,CPUTime,ShowerSimInfoMeta)
 
         hdf5io.SaveShowerSimInfo(filename,ShowerSimInfo,EventName)
 

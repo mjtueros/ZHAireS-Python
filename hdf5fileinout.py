@@ -12,6 +12,7 @@ import numpy as np
 ################################################################################################################################
 FileFormatVersion=0.0
 EventFormatVersion=0.0
+hdf5io_compression=True #compressing the file externally still gains 50%!
 #this library provides a user interface and defines HDF5 file format for the GRAND experiment
 #
 # FILE FORMAT (0.0)
@@ -36,7 +37,7 @@ EventFormatVersion=0.0
 #=============================
 # SignalSimInfo (AstropyTable)
 #=============================
-# containing details on the electric field computation: index of refraction model, tmin, tmax, tbin (this would be the meta of the antenalist)
+# containing details on the electric field computation: index of refraction model, tmin, tbin (this would be the meta of the antenalist)
 #=============================
 # AntennaInfo (AstropyTable)
 #=============================
@@ -93,63 +94,63 @@ EventFormatVersion=0.0
 #all the error handling might be easier defined in a general routine: SaveAstropyTable(Tablepath/TableName)
 def SaveRunInfo(OutFilename,RunInfo):
    #TODO: Handle error when OutFilename already contains RunInfo
-   RunInfo.write(OutFilename, path="RunInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   RunInfo.write(OutFilename, path="RunInfo", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveEventInfo(OutFilename,EventInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/EventInfo
-   EventInfo.write(OutFilename, path=EventName+"/EventInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   EventInfo.write(OutFilename, path=EventName+"/EventInfo", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveAntennaInfo(OutFilename,AntennaInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
    #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)9
-   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 #left here for compatibility with some old code [deprecated]
 def SaveAntennaInfo4(OutFilename,AntennaInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
    #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
-   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo4", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   AntennaInfo.write(OutFilename, path=EventName+"/AntennaInfo4", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveAntennaP2PInfo(OutFilename,AntennaP2PInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
    #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
-   AntennaP2PInfo.write(OutFilename, path=EventName+"/AntennaP2PInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   AntennaP2PInfo.write(OutFilename, path=EventName+"/AntennaP2PInfo", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveShowerSimInfo(OutFilename,ShowerSimInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerSimInfo
-   ShowerSimInfo.write(OutFilename, path=EventName+"/ShowerSimInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   ShowerSimInfo.write(OutFilename, path=EventName+"/ShowerSimInfo", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveSignalSimInfo(OutFilename,SignalSimInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/SignalSimInfo
-   SignalSimInfo.write(OutFilename, path=EventName+"/SignalSimInfo", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   SignalSimInfo.write(OutFilename, path=EventName+"/SignalSimInfo", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveNLongitudinal(OutFilename,NLongitudinal,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerTables/NLongitudinalProfile
-   NLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/NLongitudinalProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   NLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/NLongitudinalProfile", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveELongitudinal(OutFilename,ELongitudinal,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerTables/ELongitudinalProfile
-   ELongitudinal.write(OutFilename, path=EventName+"/ShowerTables/ELongitudinalProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   ELongitudinal.write(OutFilename, path=EventName+"/ShowerTables/ELongitudinalProfile", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveNlowLongitudinal(OutFilename,NlowLongitudinal,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerTables/NlowLongitudinalProfile
-   NlowLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/NlowLongitudinalProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   NlowLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/NlowLongitudinalProfile", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveElowLongitudinal(OutFilename,ElowLongitudinal,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerTables/ElowLongitudinalProfile
-   ElowLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/ElowLongitudinalProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   ElowLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/ElowLongitudinalProfile", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveEdepLongitudinal(OutFilename,EdepLongitudinal,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerTables/EdepLongitudinalProfile
-   EdepLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/EdepLongitudinalProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   EdepLongitudinal.write(OutFilename, path=EventName+"/ShowerTables/EdepLongitudinalProfile", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveLateralDistribution(OutFilename,NLateral,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerTables/NLateral
-   NLateral.write(OutFilename, path=EventName+"/ShowerTables/NLateralProfile", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   NLateral.write(OutFilename, path=EventName+"/ShowerTables/NLateralProfile", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 def SaveEnergyDistribution(OutFilename,EGround,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerTables/EGRound
-   EGround.write(OutFilename, path=EventName+"/ShowerTables/EGround", format="hdf5", append=True,  compression=True, serialize_meta=True)
+   EGround.write(OutFilename, path=EventName+"/ShowerTables/EGround", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 
 ######################################################################################################################################################################
@@ -182,6 +183,14 @@ def GetAntennaInfo4(InputFilename,EventName):
    #TODO: Handle error when "InputFilename" is not a file, or a valid file.
    AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaInfo4")
    return AntennaInfo
+
+def GetAntennaP2PInfo(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/AntennaInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaP2PInfo")
+   return AntennaInfo
+
 
 def GetAntennaEfield(InputFilename,EventName,AntennaName,OutputFormat="numpy"):
    #TODO: Handle error when "EventName" does not exists
@@ -392,7 +401,7 @@ def CreateShowerSimInfoMeta(RunName,EventName,ShowerSimulator):
 
     return ShowerSimInfoMeta
 
-def CreateShowerSimInfo(ShowerSimulator,HadronicModel,RandomSeed,RelativeThinning,WeightFactor,GammaEnergyCut,ElectronEnergyCut,MuonEnergyCut,MesonEnergyCut,NucleonEnergyCut,ShowerSimInfoMeta):
+def CreateShowerSimInfo(ShowerSimulator,HadronicModel,RandomSeed,RelativeThinning,WeightFactor,GammaEnergyCut,ElectronEnergyCut,MuonEnergyCut,MesonEnergyCut,NucleonEnergyCut,CPUTime,ShowerSimInfoMeta):
 
     a2=Column(data=[ShowerSimulator],name='ShowerSimulator')
     b2=Column(data=[HadronicModel],name='HadonicModel')
@@ -404,11 +413,21 @@ def CreateShowerSimInfo(ShowerSimulator,HadronicModel,RandomSeed,RelativeThinnin
     h2=Column(data=[MuonEnergyCut],name='MuonEnergyCut',unit=u.MeV)
     i2=Column(data=[MesonEnergyCut],name='MesonEnergyCut',unit=u.MeV)
     j2=Column(data=[NucleonEnergyCut],name='NucleonEnergyCut',unit=u.MeV)
-    k2=Column(data=["N/A"],name='OtherParameters')
+    k2=Column(data=[CPUTime],name='CPUTime',unit=u.s)
+    l2=Column(data=["N/A"],name='OtherParameters')
 
-    ShowerSimInfo = Table(data=(a2,b2,c2,d2,e2,f2,g2,h2,i2,j2,k2),meta=ShowerSimInfoMeta)
+    ShowerSimInfo = Table(data=(a2,b2,c2,d2,e2,f2,g2,h2,i2,j2,k2,l2),meta=ShowerSimInfoMeta)
 
     return ShowerSimInfo
+
+#######################################################################################################################################################################
+# ShowerSim Getters
+#######################################################################################################################################################################
+
+def GetCPUTime(ShowerSimInfo):
+   #TODO: Handle errors
+    return float(ShowerSimInfo["CPUTime"])
+
 
 #######################################################################################################################################################################
 # SignalSimInfo Creators
@@ -715,7 +734,7 @@ def SaveEfieldTable(outputfilename,EventName,antennaID,efield):
    #TODO: HAndle error when "efield" already exists
    #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
    #TODO: Adjust format so that we have the relevant number of significant figures. Maybe float64 is not necesary?. What about using float32 or even float 16?
-   efield.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/efield", format="hdf5", append=True, compression=True,serialize_meta=True)
+   efield.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/efield", format="hdf5", append=True, compression=hdf5io_compression,serialize_meta=True)
 
 
 
@@ -756,12 +775,12 @@ def CreateVoltageTable(voltage, EventName, EventNumber, AntennaID, AntennaNumber
 def SaveVoltageTable(outputfilename,EventName,antennaID,voltage):
    #TODO: HAndle error when "voltage" already exists
    #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
-   voltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/voltage", format="hdf5", append=True,compression=True,serialize_meta=True)
+   voltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/voltage", format="hdf5", append=True,compression=hdf5io_compression,serialize_meta=True)
 
 def SaveFilteredVoltageTable(outputfilename,EventName,antennaID,filteredvoltage):
    #TODO: HAndle error when "voltage" already exists
    #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
-   filteredvoltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/filteredvoltage", format="hdf5", append=True,compression=True,serialize_meta=True)
+   filteredvoltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/filteredvoltage", format="hdf5", append=True,compression=hdf5io_compression,serialize_meta=True)
 
 #######################################################################################################################################################################
 # Other Stuff to see how things could be done
