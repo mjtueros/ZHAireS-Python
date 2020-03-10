@@ -584,7 +584,7 @@ def GetSlopesFromTrace(Trace):
 
 def GetAntennaID(AntennaInfo,AntennaNumber):
    #TODO: Handle errors
-    return AntennaInfo["ID"][AntennaNumber]
+    return str(AntennaInfo["ID"][AntennaNumber])
 
 def GetAntennaPosition(AntennaInfo,AntennaNumber):
    #TODO: Handle errors
