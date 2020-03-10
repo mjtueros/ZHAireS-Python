@@ -671,10 +671,8 @@ def GetTotalCPUTimeFromSry(sry_file,outmode="N/A"):
           stripedline=line.split(':',-1)
           CPUtime=stripedline[len(stripedline)-1]
           #logging.debug("Found taskname " + taskname)
-
-
-          CPUTime=CPUTime.replace('\n','')
-          stripedline=CPUTime.split(' ',-1)
+          CPUtime=CPUtime.replace('\n','')
+          stripedline=CPUtime.split(' ',-1)
           time=0.0
           if(len(stripedline)>1):
             if(stripedline[-1]=="sec"):

@@ -100,7 +100,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     MuonEnergyCut=AiresInfo.GetMuonEnergyCutFromSry(sryfile[0])
     MesonEnergyCut=AiresInfo.GetMesonEnergyCutFromSry(sryfile[0])
     NucleonEnergyCut=AiresInfo.GetNucleonEnergyCutFromSry(sryfile[0])
-    CPUTime=AiresInfo.GetTotalCPUTimeFromSry(str(Directory)+"/"+str(TaskName)+".sry","N/A")
+    CPUTime=AiresInfo.GetTotalCPUTimeFromSry(sryfile[0],"N/A")
 
 
     if(ShowerSimInfo):
