@@ -127,7 +127,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
           xyz[(i-1)*8+j]= xyz1[(i-1)*8+j] +b*a +r0 # projected
 
 
-    cuadofset = 0.25 #this requires max_ang to be more than 0.04...its small enough for all practical aplications
+    cuadofset = 0.15 #it was 0.25 the first time we used it, but i want more antensas inside the cone. this requires max_ang to be more than 0.04...its small enough for all practical aplications
     cuadstep = (np.sqrt(cone_ang)-cuadofset)/nant
 
 
@@ -285,7 +285,7 @@ def GetUVW(pos, cx, cy, cz, zen, az, phigeo, bfieldangle):
    return np.array([np.dot(v,relpos),np.dot(vxB,relpos),np.dot(vxvxB,relpos)]).T # vector dot
 
 
-def CreateAiresInputHeader(TaskName, Primary, Zenith, Azimuth, Energy, RandomSeed=0, OutputFile="TestInput.inp", OutMode="a" ):
+def CreateAiresInputHeader(TaskName, Primary, Zenith, Azimuth, Energy, RandomSeed=0.0, OutputFile="TestInput.inp", OutMode="a" ):
 
 #TaskName, the name of the task. All files in the run will have that name, and some extension. It is usually also the name of the .inp, but not necessarily
 #Primary [AIRES]: Proton, Iron, Gamma, or see Aires Manual
@@ -295,12 +295,12 @@ def CreateAiresInputHeader(TaskName, Primary, Zenith, Azimuth, Energy, RandomSee
 #RandomSeed. A number from [0 to 1). 0 is that the seed is generated automatically by the script. "Automatic", leaves the work of setting a random seed to Aires.
 #output
 
-  print 'produce input file header ....', OutputFile
+  print 'produce input file header on:', OutputFile
 
   base=os.path.basename(OutputFile)
 
   file= open(OutputFile, OutMode)
-  file.write('\n################################################################################\n')
+  file.write('\n##############################################################################\n')
   file.write('# Aires simulation header generated with CreateAiresInputHeader                #\n')
   file.write('################################################################################\n')
 
@@ -311,9 +311,10 @@ def CreateAiresInputHeader(TaskName, Primary, Zenith, Azimuth, Energy, RandomSee
   file.write('PrimaryEnergy {0:.5} EeV\n'.format(float(Energy)))
   file.write('PrimaryZenAngle {0:6.5} deg\n'.format(Zenith))
   file.write('PrimaryAzimAngle {0:.5} deg Magnetic\n'.format(Azimuth))
-  if(RandomSeed==0):
+  if(RandomSeed==0.0):
     seed=random.uniform(0, 1)
-  seed=float(RandomSeed)
+  else:
+    seed=float(RandomSeed)
   if(RandomSeed!="Automatic"):
     file.write('RandomSeed {0:1.9f}\n'.format(seed))
   file.write('################################################################################\n')
@@ -326,7 +327,7 @@ def CreateExampleSkeleton(OutputFile="TestInput.inp", OutMode="a"):
   base=os.path.basename(OutputFile)
 
   file= open(OutputFile, OutMode)
-  file.write('\n################################################################################\n')
+  file.write('\n##############################################################################\n')
   file.write('# Aires simulation skeleton example, generated with CreateExampleSkeleton      #\n')
   file.write('################################################################################\n')
   file.write('#\n')
