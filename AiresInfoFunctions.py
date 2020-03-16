@@ -439,7 +439,6 @@ def GetKmXmaxFromSry(sry_file,outmode="N/A"): #To do. Handle when Xmax is not fo
     return -1
 
 def GetTaskNameFromSry(sry_file,outmode="N/A"):
-  datafile=open(sry_file,'r')
   try:
     datafile=open(sry_file,'r')
     with open(sry_file, "r") as datafile:
