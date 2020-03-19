@@ -1,3 +1,6 @@
+#if you are having encoding errors, specially in lyon, be sure to force the environment to utf8
+#setenv  LANGUAGE en_US.UTF-8 ;setenv  LC_ALL en_US.UTF-8 ;setenv  LANG en_US.UTF-8setenv LC_TYPE en_US.UTF-8
+#
 
 #this functions will accept GRAND and AIRES outmode, to give the results in each convention
 #it will output the primary zen,azim,energy,primarytype, taken from the .inp file present at input_file_path) (assumed only one .inp file per dir)
@@ -460,7 +463,7 @@ def GetTaskNameFromSry(sry_file,outmode="N/A"):
         logging.error('warning taskname not found, Aires has no default value, cannot continue')
         exit()
   except:
-    logging.error("GetZenithAngleFromSry:file not found or invalid:"+sry_file)
+    logging.error("GetTaskNameFromSry:file not found or invalid:"+sry_file)
     raise
     return -1
 
