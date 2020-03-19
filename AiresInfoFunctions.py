@@ -1,3 +1,6 @@
+#if you are having encoding errors, specially in lyon, be sure to force the environment to utf8
+#setenv  LANGUAGE en_US.UTF-8 ;setenv  LC_ALL en_US.UTF-8 ;setenv  LANG en_US.UTF-8setenv LC_TYPE en_US.UTF-8
+#
 
 #this functions will accept GRAND and AIRES outmode, to give the results in each convention
 #it will output the primary zen,azim,energy,primarytype, taken from the .inp file present at input_file_path) (assumed only one .inp file per dir)
@@ -37,7 +40,8 @@ import logging
 #but it adds modularity, and closes the files when it does not use it any more.
 #If at some point we need speed, then we could input datafile, and make a wraper for opening the file
 
-AiresPath="/home/mjtueros/aires/bin"
+#AiresPath="/home/mjtueros/aires/bin"
+AiresPath=os.environ["AIRESBINDIR"]
 
 def GetZenithAngleFromSry(sry_file,outmode="GRAND"):
   try:
@@ -459,7 +463,7 @@ def GetTaskNameFromSry(sry_file,outmode="N/A"):
         logging.error('warning taskname not found, Aires has no default value, cannot continue')
         exit()
   except:
-    logging.error("GetZenithAngleFromSry:file not found or invalid:"+sry_file)
+    logging.error("GetTaskNameFromSry:file not found or invalid:"+sry_file)
     raise
     return -1
 
@@ -631,11 +635,16 @@ def GetMagneticFieldFromSry(sry_file,outmode="N/A"):
       for line in datafile:
         if 'Geomagnetic field:' in line:
           line = line.lstrip()
-          stripedline=line.split('Intensity:',-1)
-          intensityline=stripedline[1]
-          intensityline=intensityline.lstrip()
-          stripedline=intensityline.split(' ',-1)
-          fieldintensity=float(stripedline[0])
+          if 'Off'in line:
+            fieldintensity=0.0
+            fieldinclination=0.0
+            fielddeclination=0.0
+          else:
+            stripedline=line.split('Intensity:',-1)
+            intensityline=stripedline[1]
+            intensityline=intensityline.lstrip()
+            stripedline=intensityline.split(' ',-1)
+            fieldintensity=float(stripedline[0])
         if 'I:' in line:
           line = line.lstrip()
           stripedline=line.split('I:',-1)
