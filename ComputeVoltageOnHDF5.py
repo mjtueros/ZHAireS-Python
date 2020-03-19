@@ -3,7 +3,7 @@ import sys
 import logging
 
 #root_dir = os.path.realpath(os.path.join(os.path.split(__file__)[0], "../radio-simus")) # = $PROJECT
-root_dir="/home/mjtueros/GRAND/GP300/azillesnana/radio-simus"
+root_dir=os.environ["RADIOSIMUS"]
 sys.path.append(os.path.join(root_dir, "lib", "python"))
 from radio_simus.in_out import _table_voltage
 from radio_simus.computevoltage import compute_antennaresponse

@@ -385,6 +385,23 @@ def GetGroundAltitude(EventInfo):
    #TODO: Handle errors
     return float(EventInfo["GroundAltitude"])
 
+def GetEventPrimary(EventInfo):
+   #TODO: Handle errors
+    return EventInfo["Primary"]
+
+def GetEventAzimuth(EventInfo):
+   #TODO: Handle errors
+    return float(EventInfo["Azimuth"])
+
+def GetEventZenith(EventInfo):
+   #TODO: Handle errors
+    return float(EventInfo["Zenith"])
+
+def GetEventEnergy(EventInfo):
+   #TODO: Handle errors
+    return float(EventInfo["Energy"])
+
+
 #######################################################################################################################################################################
 # ShowerSim Creators
 #######################################################################################################################################################################

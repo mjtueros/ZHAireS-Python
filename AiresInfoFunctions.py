@@ -37,7 +37,8 @@ import logging
 #but it adds modularity, and closes the files when it does not use it any more.
 #If at some point we need speed, then we could input datafile, and make a wraper for opening the file
 
-AiresPath="/home/mjtueros/aires/bin"
+#AiresPath="/home/mjtueros/aires/bin"
+AiresPath=os.environ["AIRESBINDIR"]
 
 def GetZenithAngleFromSry(sry_file,outmode="GRAND"):
   try:
@@ -631,11 +632,16 @@ def GetMagneticFieldFromSry(sry_file,outmode="N/A"):
       for line in datafile:
         if 'Geomagnetic field:' in line:
           line = line.lstrip()
-          stripedline=line.split('Intensity:',-1)
-          intensityline=stripedline[1]
-          intensityline=intensityline.lstrip()
-          stripedline=intensityline.split(' ',-1)
-          fieldintensity=float(stripedline[0])
+          if 'Off'in line:
+            fieldintensity=0.0
+            fieldinclination=0.0
+            fielddeclination=0.0
+          else:
+            stripedline=line.split('Intensity:',-1)
+            intensityline=stripedline[1]
+            intensityline=intensityline.lstrip()
+            stripedline=intensityline.split(' ',-1)
+            fieldintensity=float(stripedline[0])
         if 'I:' in line:
           line = line.lstrip()
           stripedline=line.split('I:',-1)

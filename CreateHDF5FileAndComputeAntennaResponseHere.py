@@ -5,11 +5,16 @@ import subprocess
 import datetime
 import time
 import glob
-python="/home/mjtueros/GRAND/GP300/GRANDMOTHER/GRANDpython"
-ZHAireSReader="/home/mjtueros/AiresRepository/Dropbox/GitAiresPython/ZHAireS-Python/ZHAireSReader.py"
-ComputeVoltage="/home/mjtueros/AiresRepository/Dropbox/GitAiresPython/ZHAireS-Python/ComputeVoltageOnHDF5.py"
-ComputePeak2Peak="/home/mjtueros/AiresRepository/Dropbox/GitAiresPython/ZHAireS-Python/ComputePeak2PeakOnHDF5.py"
-RemoveTables="/home/mjtueros/AiresRepository/Dropbox/GitAiresPython/ZHAireS-Python/RemoveTableFromHDF5.py"
+
+ZHAIRESPYTHON=os.environ["ZHAIRESPYTHON"]
+PYTHONINTERPRETER=os.environ["PYTHONINTERPRETER"]
+
+
+python=PYTHONINTERPRETER
+ZHAireSReader=ZHAIRESPYTHON+"/ZHAireSReader.py"
+ComputeVoltage=ZHAIRESPYTHON+"/ComputeVoltageOnHDF5.py"
+ComputePeak2Peak=ZHAIRESPYTHON+"/ComputePeak2PeakOnHDF5.py"
+RemoveTables=ZHAIRESPYTHON+"/RemoveTableFromHDF5.py"
 
 Filename=glob.glob("*.idf")
 Filename=os.path.splitext(Filename[0])[0]
