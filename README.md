@@ -1,4 +1,4 @@
-# ZHAireS-Python
+# ZHAireS-Python testrelease
 Python scripts to get data from ZHAireS files, and to create ZHAireS inputs
 
 # I will document this eventually
@@ -23,4 +23,4 @@ ComputeVoltageOnHDF5.py can then be aplied to compute the antenna response, and 
 
 ComputePeak2PealOnHDF5 can then be plied to compute the P2Pamplitude of each channel, and the hilbertpeak and peak time.
 
-TODO: Write a script that removes the traces to make smaller files
+and some more
