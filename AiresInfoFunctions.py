@@ -852,6 +852,34 @@ def GetSiteFromSry(sry_file,outmode="N/A"):
     raise
     return -1
 
+def GetLatLongFromSry(sry_file,outmode="N/A"):
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      for line in datafile:
+        if '(Lat:' in line:
+          line = line.lstrip()
+          stripedline=line.split(':',-1)
+          Lat= stripedline[1]
+          Lat= Lat.lstrip()
+          Lat= Lat.split(" ",-1)
+          Lat= Lat[0]
+          Long=stripedline[2]
+          Long= Long.lstrip()
+          Long= Long.split(" ",-1)
+          Long= Long[0]
+          return Lat,Long
+      try:
+        Lat
+        Long
+      except NameError:
+        logging.error('warning Latitude or Longitude not found')
+        return -1,-1
+  except:
+    logging.error("GetLatLongFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1,-1
+
 def GetDateFromSry(sry_file,outmode="N/A"):
   try:
     datafile=open(sry_file,'r')

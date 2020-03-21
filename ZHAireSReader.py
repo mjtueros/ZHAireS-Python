@@ -57,6 +57,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     SlantXmax=AiresInfo.GetSlantXmaxFromSry(sryfile[0])
     HadronicModel=AiresInfo.GetHadronicModelFromSry(sryfile[0])
     InjectionAltitude=AiresInfo.GetInjectionAltitudeFromSry(sryfile[0])
+    Lat,Long=AiresInfo.GetLatLongFromSry(sryfile[0])
 
     if(RunInfo):
 
@@ -81,7 +82,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
 
         EventInfoMeta=hdf5io.CreateEventInfoMeta(RunName,EventNumber,EventInfo,ShowerSimInfo,SignalSimInfo,AntennaInfo,AntennaTraces,NLongitudinal,ELongitudinal,NlowLongitudinal,ElowLongitudinal,EdepLongitudinal,LateralDistribution,EnergyDistribution)
 
-        EventInfo=hdf5io.CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta)
+        EventInfo=hdf5io.CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,Lat,Long,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta)
 
         hdf5io.SaveEventInfo(filename,EventInfo,EventName)
 
