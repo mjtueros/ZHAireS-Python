@@ -87,6 +87,10 @@ hdf5io_compression=True #compressing the file externally still gains 50%!
 #=======================================
 # Contains the longitudinal evolution of the number of dicarded  low energy particles
 #
+
+def GetMetaFromTable(AstropyTable):
+   return AstropyTable.meta
+
 ################################################################################################################################################################
 # Table Savers
 ################################################################################################################################################################
@@ -343,7 +347,7 @@ def CreateEventInfoMeta(RunName,EventNumber,EventInfo,ShowerSimInfo,SignalSimInf
         }
     return EventInfoMeta
 
-def CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta):
+def CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,Latitude,Longitude,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta):
 
     a1=Column(data=[EventName],name='EventName')   #EventName, states the name of the Task of the simulation, that usually dictates the file names
     b1=Column(data=["N/A"],name='EventID')    #An event might have some ID?
@@ -359,14 +363,16 @@ def CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPos
     l1=Column(data=[GroundAltitude],name='GroundAltitude',unit=u.m)
     m1=Column(data=[Site],name='Site')
     n1=Column(data=[Date],name='Date')
-    o1=Column(data=[FieldIntensity],name='BField',unit=u.uT)
-    p1=Column(data=[FieldInclination],name='BFieldIncl',unit=u.deg)
-    q1=Column(data=[FieldDeclination],name='BFieldDecl',unit=u.deg)
-    r1=Column(data=[AtmosphericModel],name='AtmosphericModel')
-    s1=Column(data=["N/A"],name='AtmosphericModelParameters')
-    t1=Column(data=[EnergyInNeutrinos],name='EnergyInNeutrinos',unit=u.EeV)
+    o1=Column(data=[Latitude],name='Latitude',unit=u.deg)
+    p1=Column(data=[Longitude],name='Longitude',unit=u.deg)
+    q1=Column(data=[FieldIntensity],name='BField',unit=u.uT)
+    r1=Column(data=[FieldInclination],name='BFieldIncl',unit=u.deg)
+    s1=Column(data=[FieldDeclination],name='BFieldDecl',unit=u.deg)
+    t1=Column(data=[AtmosphericModel],name='AtmosphericModel')
+    u1=Column(data=["N/A"],name='AtmosphericModelParameters')
+    v1=Column(data=[EnergyInNeutrinos],name='EnergyInNeutrinos',unit=u.EeV)
 
-    EventInfo = Table(data=(a1,b1,c1,d1,e1,f1,g1,h1,i1,j1,k1,l1,m1,n1,o1,p1,q1,r1,s1,t1),meta=EventInfoMeta)
+    EventInfo = Table(data=(a1,b1,c1,d1,e1,f1,g1,h1,i1,j1,k1,l1,m1,n1,o1,p1,q1,r1,s1,t1,u1,v1),meta=EventInfoMeta)
 
     return EventInfo
 
@@ -387,19 +393,31 @@ def GetGroundAltitude(EventInfo):
    #TODO: Handle errors
     return float(EventInfo["GroundAltitude"])
 
-def GetEventPrimary(EventInfo):
+def GetLatitude(EventInfo):
+   #TODO: Handle errors
+    return float(EventInfo["Latitude"])
+
+def GetLongitude(EventInfo):
+   #TODO: Handle errors
+    return float(EventInfo["Longitude"])
+
+def GetXmaxPosition(EventInfo):
+   #TODO: Handle errors
+    return EventInfo["XmaxPosition"]
+
+def GetPrimaryFromEventInfo(EventInfo):
    #TODO: Handle errors
     return EventInfo["Primary"]
 
-def GetEventAzimuth(EventInfo):
+def GetAzimuthFromEventInfo(EventInfo):
    #TODO: Handle errors
     return float(EventInfo["Azimuth"])
 
-def GetEventZenith(EventInfo):
+def GetZenithFromEventInfo(EventInfo):
    #TODO: Handle errors
     return float(EventInfo["Zenith"])
 
-def GetEventEnergy(EventInfo):
+def GetEnergyFromEventInfo(EventInfo):
    #TODO: Handle errors
     return float(EventInfo["Energy"])
 
@@ -489,6 +507,10 @@ def GetTimeWindowMax(SignalSimInfo):
    #TODO: Handle errors
     return float(SignalSimInfo["TimeWindowMax"])
 
+def GetRefractionIndexModelParameters(SignalSimInfo):
+   #TODO: Handle errors
+    return SignalSimInfo["RefractionIndexModelParameters"]
+
 ####################################################################################################################################################################################
 #AntennaInfo Creators
 ####################################################################################################################################################################################
@@ -506,15 +528,22 @@ def CreatAntennaInfoMeta(RunName,EventName,VoltageSimulator="N/A",AntennaModel="
     }
     return AntennaInfoMeta
 
-def CreateAntennaInfo(IDs, antx, anty, antz, slopeA, slopeB, AntennaInfoMeta, P2Pefield=None,P2Pvoltage=None,P2Pfiltered=None,HilbertPeak=None,HilbertPeakTime=None):
+def CreateAntennaInfo(IDs, antx, anty, antz, antt, slopeA, slopeB, AntennaInfoMeta, P2Pefield=None,P2Pvoltage=None,P2Pfiltered=None,HilbertPeak=None,HilbertPeakTime=None):
    #TODO: Handle errors
     a4=Column(data=IDs,name='ID')
+    antx=antx.astype('f4')
     b4=Column(data=antx,name='X',unit=u.m) #in core cordinates
+    anty=anty.astype('f4')
     c4=Column(data=anty,name='Y',unit=u.m) #in core cordinates
+    antz=antz.astype('f4')
     d4=Column(data=antz,name='Z',unit=u.m) #in core cordinates
-    e4=Column(data=slopeA,name='SlopeA',unit=u.m) #in core cordinates
-    f4=Column(data=slopeB,name='SlopeB',unit=u.m) #in core cordinates
-    data=[a4,b4,c4,d4,e4,f4]
+    antt=antt.astype('f4')
+    e4=Column(data=antt,name='T0',unit=u.ns) #in core cordinates
+    sopeA=slopeA.astype('f4')
+    f4=Column(data=slopeA,name='SlopeA',unit=u.m) #in core cordinates
+    sopeB=slopeB.astype('f4')
+    g4=Column(data=slopeB,name='SlopeB',unit=u.m) #in core cordinates
+    data=[a4,b4,c4,d4,e4,f4,g4]
 
     #this is left here for now, but all the P2P section was moved to a separate table
     if P2Pefield is not None:
@@ -596,8 +625,9 @@ def GetZFromAntennaInfo(AntennaInfo):
    #TODO: Handle errors
    return AntennaInfo["Z"]
 
-def GetSlopesFromTrace(Trace):
-   return Trace.meta['slopes']
+def GetT0FromAntennaInfo(AntennaInfo):
+   #TODO: Handle errors
+   return float(AntennaInfo["T0"])
 
 def GetAntennaID(AntennaInfo,AntennaNumber):
    #TODO: Handle errors
@@ -614,12 +644,6 @@ def GetAntennaSlope(AntennaInfo,AntennaNumber):
 def GetAntennaPositions(AntennaInfo):
    #TODO: Handle errors
     return (AntennaInfo["X"][:],AntennaInfo["Y"][:],AntennaInfo["Z"][:])
-
-def GetMetaFromTable(AstropyTable):
-   return AstropyTable.meta
-
-def GetAntennaInfoFromEventInfo(EventInfo,nant):
-   return EventInfo[nant]
 
 ####################################################################################################################################################################################
 #AntennaP2PInfo Creators
@@ -707,6 +731,36 @@ def CreateAntennaP2PInfo(IDs, AntennaInfoMeta, P2Pefield=None,P2Pvoltage=None,P2
 
     AstropyTable = Table(data=data,meta=AntennaInfoMeta)
     return AstropyTable
+
+####################################################################################################################################################################################
+#AntennaP2PInfo Getters
+####################################################################################################################################################################################
+
+def GetHilbertPeakEFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["HilbertPeakE"]
+
+def GetHilbertPeakVFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["HilbertPeakV"]
+
+def GetHilbertPeakFVFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["HilbertPeakFV"]
+
+def GetHilbertPeakTimeEFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["HilbertPeakTimeE"]
+
+def GetHilbertPeakTimeVFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["HilbertPeakTimeV"]
+
+def GetHilbertPeakTimeFVFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["HilbertPeakTimeFV"]
+
+
 
 ########################################################################################################################
 # Create and Save traces
