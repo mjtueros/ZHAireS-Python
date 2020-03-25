@@ -5,24 +5,16 @@
 #this functions will accept GRAND and AIRES outmode, to give the results in each convention
 #it will output the primary zen,azim,energy,primarytype, taken from the .inp file present at input_file_path) (assumed only one .inp file per dir)
 
-#aditional output parameters could be:
-#  task name,
-#  injection depth,
-#  ground level,
-#  xmax grams (from the sry)
-#  xmax position (from the new version sry)
-#  AIRES and ZHAireS version
-# any other?
 
 #TO DO: treat correctly the different possible primary types, including RASPASS Multi primary
 #TO DO: treat correctly the case where a distribution of primary types or energies or angles is put in the input
 #TO DO: Check consistency of the output (energy within a range, angles within a range, etc)
 #TO DO: have the .sry reader regenerate the summary using AiresSry, if the file is not foun
 
-
 #6/2019 Matias Tueros, first attempt at python based on original script by Anne Zilles.
 #10/2019 Migrated them to make it the official library
 #12/2019 Set up on git
+#03/2020 Corona Virus
 
 import sys
 from sys import argv
@@ -958,6 +950,38 @@ def GetEnergyFractionInNeutrinosFromSry(sry_file,outmode="N/A"):
     return -1
 
 
+def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
+
+  AntennaID=[]
+  AntennaX=[]
+  AntennaY=[]
+  AntennaZ=[]
+  AntennaT=[]
+  Read=False
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      for line in datafile:
+        if(Read):
+          stripedline=line.split()
+          if(len(stripedline)==6):
+            AntennaID.append(stripedline[1])
+            AntennaX.append(stripedline[2])
+            AntennaY.append(stripedline[3])
+            AntennaZ.append(stripedline[4])
+            AntennaT.append(stripedline[5])
+          else:
+            Read=False
+            return AntennaID,AntennaX,AntennaY,AntennaZ,AntennaT
+        elif 'Antenna|      Label      |' in line:
+          Read=True
+
+
+  except:
+    logging.error("GetAntennaInfoFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1
+
 
 def GetLongitudinalTable(Path,TableNumber,Slant=True,Precision="Double"):
     #todo: check against a list of valid tables
@@ -1072,7 +1096,114 @@ def GetLateralTable(Path,TableNumber,Density=True,Precision="Double"):
 
 
 
+def get_antenna_t0(xant,yant,hant, azimuthdeg, zenithdeg):
+    #this code is copied from zhaires fieldinit
+    #returns the t0 of the antenna in ns
+    #x,y,hant is antenna position in zhaires reference frame, hant is the altitude above ground (its making flat earth asumptions for now)
+    #azimuth and zenith are in ZHAireS,degrees
+    cspeed = 299792458.0
+    #get incoming azimut in radians
+    phidirrad=azimuthdeg*np.pi/180.0
+    #set phidirrad in the rangle [0,2pi]
+    if(phidirrad < 0.0):
+       phidirrad=phidirrad+2.0*np.pi
 
+    zenithrad=zenithdeg*np.pi/180.0
+    # Auxiliary variables
+    coszenith=np.cos(zenithrad)
+    sinzenith=np.sin(zenithrad)
+    tanzenith=np.tan(zenithrad)
+
+
+    # distance to the axis
+    Rant=np.sqrt(xant*xant+yant*yant)
+    #phi
+    phiantrad=np.arctan2(yant,xant)
+    if(phiantrad  < 0):
+      phiantrad=2.0*np.pi+phiantrad
+
+    #Adjusting time window
+    #phi of antenna
+    #projection of r of antenna on shower phi direction
+    angle=np.absolute(phidirrad-phiantrad)
+
+    rproj=Rant*np.cos(angle)
+
+    dtna=-(hant/coszenith + (rproj-hant*tanzenith)*sinzenith)/cspeed
+
+    return dtna*1.0e9
+
+
+#this gets the effective refraction index from poitn R0 to xant,yant,groundz (default to the core position), all in meters, but kr in 1/km
+import numpy as np
+def GetEffectiveRefractionIndex(x0,y0,z0,ns,kr,groundz,xant=0,yant=0,stepsize = 20000):
+
+        rearth=6370949.0
+        R02=x0*x0+y0*y0  #notar que se usa R02, se puede ahorrar el producto y la raiz cuadrada
+        h0=(np.sqrt((z0+rearth)*(z0+rearth) + R02 ) - rearth)/1.E3 #altitude of emission, in km
+
+        rh0 = ns*np.exp(kr*h0) #refractivity at emission
+        n_h0=1.E0+1.E-6*rh0 #n at emission
+
+        hd=(groundz)/1.E3 #detector altitude
+
+#       Vector from detector to average point on track. Making the integral in this way better guaranties the continuity
+#       since the choping of the path will be always the same as you go farther away. If you start at your starting point, for a given geometry,
+#       the choping points change with each starting position.
+
+        ux = x0-xant
+        uy = y0-yant         #the antenna position, considered to be at the core
+        uz = z0-groundz
+
+        Rd=np.sqrt(ux*ux + uy*uy)
+        kx=ux/Rd
+        ky=uy/Rd #!k is a vector from the antenna to the track, that when multiplied by Rd will end in the track and sumed to antenna position will be equal to the track positon
+        kz=uz/Rd
+
+#       integral starts at ground
+        nint=0
+        sum=0.E0
+
+        currpx=0+xant
+        currpy=0+yant    #!current point (1st antenna position)
+        currpz=groundz
+        currh=hd
+
+        while(Rd > stepsize): #if distance projected on the xy plane is more than 10km
+          nint=nint+1
+          nextpx=currpx+kx*stepsize
+          nextpy=currpy+ky*stepsize           #this is the "next" point
+          nextpz=currpz+kz*stepsize
+
+          nextR2=nextpx*nextpx + nextpy*nextpy #!se usa el cuadrado, se puede ahorrar la raiz cuadrada
+          nexth=(np.sqrt((nextpz+rearth)*(nextpz+rearth) + nextR2) - rearth)/1.E3
+
+          if(np.absolute(nexth-currh) > 1.E-10  ):   #check that we are not going at constant height, if so, the refraction index is constant
+              sum=sum+(np.exp(kr*nexth)-np.exp(kr*currh))/(kr*(nexth-currh))
+          else:
+              sum=sum+np.exp(kr*currh)
+
+          currpx=nextpx
+          currpy=nextpy
+          currpz=nextpz  #Set new "current" point
+          currh=nexth
+
+          Rd=Rd-stepsize #reduce the remaining lenght
+        #enddo
+
+        #when we arrive here, we know that we are left with the last part of the integral, the one closer to the track (and maybe the only one)
+
+        nexth=h0
+
+        if(np.absolute(nexth-currh) > 1.E-10 ): #check that we are not going at constant height, if so, the refraction index is constant
+          sum=sum+(np.exp(kr*nexth)-np.exp(kr*currh))/(kr*(nexth-currh))
+        else:
+          sum=sum+np.exp(kr*currh)
+
+        nint=nint+1
+        avn=ns*sum/nint
+        n_eff=1.E0+1.E-6*avn #average (effective) n
+        return n_eff
 
 
 def ReadAiresSry(sry_file,outmode="N/A"):
