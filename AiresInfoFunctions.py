@@ -949,6 +949,42 @@ def GetEnergyFractionInNeutrinosFromSry(sry_file,outmode="N/A"):
     raise
     return -1
 
+def get_antenna_t0(xant,yant,hant, azimuthdeg, zenithdeg):
+    #this code is copied from zhaires fieldinit
+    #returns the t0 of the antenna in ns
+    #x,y,hant is antenna position in zhaires reference frame, hant is the altitude above ground (its making flat earth asumptions for now)
+    #azimuth and zenith are in ZHAireS,degrees
+    cspeed = 299792458.0
+    #get incoming azimut in radians
+    phidirrad=azimuthdeg*np.pi/180.0
+    #set phidirrad in the rangle [0,2pi]
+    if(phidirrad < 0.0):
+       phidirrad=phidirrad+2.0*np.pi
+
+    zenithrad=zenithdeg*np.pi/180.0
+    # Auxiliary variables
+    coszenith=np.cos(zenithrad)
+    sinzenith=np.sin(zenithrad)
+    tanzenith=np.tan(zenithrad)
+
+
+    # distance to the axis
+    Rant=np.sqrt(xant*xant+yant*yant)
+    #phi
+    phiantrad=np.arctan2(yant,xant)
+    if(phiantrad  < 0):
+      phiantrad=2.0*np.pi+phiantrad
+
+    #Adjusting time window
+    #phi of antenna
+    #projection of r of antenna on shower phi direction
+    angle=np.absolute(phidirrad-phiantrad)
+
+    rproj=Rant*np.cos(angle)
+
+    dtna=-(hant/coszenith + (rproj-hant*tanzenith)*sinzenith)/cspeed
+
+    return dtna*1.0e9
 
 def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
 
@@ -969,6 +1005,20 @@ def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
             AntennaX.append(stripedline[2])
             AntennaY.append(stripedline[3])
             AntennaZ.append(stripedline[4])
+            if(stripedline[5]=="**********"):
+              print("trying to recover an antenna t0")
+              azimuthdeg=GetAzimuthAngleFromSry(sry_file,outmode="AIRES")
+              zenithdeg=GetZenithAngleFromSry(sry_file,outmode="AIRES")
+              xant=float(stripedline[2])
+              yant=float(stripedline[3])
+              zant=float(stripedline[4])
+              ground=GetGroundAltitudeFromSry(sry_file)
+              hant=zant-ground
+              print(xant,yant,zant,hant,azimuthdeg,zenithdeg)
+              stripedline[5]=str(get_antenna_t0(xant,yant,hant, azimuthdeg, zenithdeg))
+              print(stripedline[5])
+
+
             AntennaT.append(stripedline[5])
           else:
             Read=False
@@ -1096,42 +1146,7 @@ def GetLateralTable(Path,TableNumber,Density=True,Precision="Double"):
 
 
 
-def get_antenna_t0(xant,yant,hant, azimuthdeg, zenithdeg):
-    #this code is copied from zhaires fieldinit
-    #returns the t0 of the antenna in ns
-    #x,y,hant is antenna position in zhaires reference frame, hant is the altitude above ground (its making flat earth asumptions for now)
-    #azimuth and zenith are in ZHAireS,degrees
-    cspeed = 299792458.0
-    #get incoming azimut in radians
-    phidirrad=azimuthdeg*np.pi/180.0
-    #set phidirrad in the rangle [0,2pi]
-    if(phidirrad < 0.0):
-       phidirrad=phidirrad+2.0*np.pi
 
-    zenithrad=zenithdeg*np.pi/180.0
-    # Auxiliary variables
-    coszenith=np.cos(zenithrad)
-    sinzenith=np.sin(zenithrad)
-    tanzenith=np.tan(zenithrad)
-
-
-    # distance to the axis
-    Rant=np.sqrt(xant*xant+yant*yant)
-    #phi
-    phiantrad=np.arctan2(yant,xant)
-    if(phiantrad  < 0):
-      phiantrad=2.0*np.pi+phiantrad
-
-    #Adjusting time window
-    #phi of antenna
-    #projection of r of antenna on shower phi direction
-    angle=np.absolute(phidirrad-phiantrad)
-
-    rproj=Rant*np.cos(angle)
-
-    dtna=-(hant/coszenith + (rproj-hant*tanzenith)*sinzenith)/cspeed
-
-    return dtna*1.0e9
 
 
 #this gets the effective refraction index from poitn R0 to xant,yant,groundz (default to the core position), all in meters, but kr in 1/km
