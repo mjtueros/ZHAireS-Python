@@ -118,7 +118,7 @@ def SaveAntennaInfo4(OutFilename,AntennaInfo,EventName):
 def SaveAntennaP2PInfo(OutFilename,AntennaP2PInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
    #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
-   AntennaP2PInfo.write(OutFilename, path=EventName+"/AntennaP2PInfo", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
+   AntennaP2PInfo.write(OutFilename, path=EventName+"/AntennaP2PInfo", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
 
 def SaveShowerSimInfo(OutFilename,ShowerSimInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerSimInfo
