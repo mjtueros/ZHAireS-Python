@@ -4,7 +4,7 @@ export PYTHONINTERPRETER=/sps/hep/trend/software/PythonAppImages/GRANDpython
 #directory where Aires/ZHAireS binaries are located
 export AIRESBINDIR=/sps/hep/trend/software/Aires-19-04-00-ZHAireS-1.0.27/aires/bin
 #directory where the GRAND radio-simus package with
-export RADIOSIMUS=/home/mjtueros/GRAND/GP300/azillesnana/radio-simus
+export RADIOSIMUS=/sps/hep/trend/tueros/azillesnana/radio-simus
 #directory wheere ZHAireS-Python is located
 export ZHAIRESPYTHON=/sps/hep/trend/tueros/ZHAireS-Python
 
