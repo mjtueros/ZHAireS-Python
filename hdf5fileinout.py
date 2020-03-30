@@ -637,6 +637,14 @@ def GetAntennaPosition(AntennaInfo,AntennaNumber):
    #TODO: Handle errors
     return (AntennaInfo["X"][AntennaNumber],AntennaInfo["Y"][AntennaNumber],AntennaInfo["Z"][AntennaNumber])
 
+def GetAntennaT0(AntennaInfo,AntennaNumber):
+   #TODO: Handle errors
+    return (AntennaInfo["T0"][AntennaNumber])
+
+def GetAntennaT0s(AntennaInfo):
+   #TODO: Handle errors
+    return (AntennaInfo["T0"])
+
 def GetAntennaSlope(AntennaInfo,AntennaNumber):
    #TODO: Handle errors
     return (AntennaInfo["SlopeA"][AntennaNumber] ,AntennaInfo["SlopeB"][AntennaNumber])
