@@ -982,7 +982,7 @@ def get_antenna_t0(xant,yant,hant, azimuthdeg, zenithdeg):
 
     rproj=Rant*np.cos(angle)
 
-    dtna=-(hant/coszenith + (rproj-hant*tanzenith)*sinzenith)/cspeed
+    dtna=(hant/coszenith + (rproj-hant*tanzenith)*sinzenith)/cspeed
 
     return dtna*1.0e9
 
