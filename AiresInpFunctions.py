@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 # The index of refraction model will break if altitude is negative. So be carefull if you are going for inclined planes. There is a way to keep the pattern contained in the slope
 # see the code for hints on how to do this
 
-def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000.0, cone_ang=2.0, nant=20, az_B=0.0, zen_B=147.3, outputfile="TestInput.inp", outmode="a", RandomFraction = 0, stepmode="linear"):
+def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000.0, cone_ang=2.0, nant=20, az_B=0.0, zen_B=147.4, outputfile="TestInput.inp", outmode="a", RandomFraction = 0, stepmode="linear"):
 
   #==============================================================================
   #Original version from A. Zilles, extensivly modified by M. Tueros in Oct 2019
@@ -31,7 +31,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
   #cone_ang (max_ang) [deg]: Aperture of the cone of the starshape patern. (2 deg)
   #nant= number of antennas per arm, 8 arms (so you end with nant*8). Antennas will be equally spaced along the arm.
   #az_B: Azimuth of the magnetic field, to get the vxB components. Usually 0 if azimuth 0 points north (Aires Magnetic coordinates).
-  #zen_B: Zenith of the magnetic field. 147,43 deg in Lenghu (152.95 deg in ullastay??), Direction where we point to
+  #zen_B: Zenith of the magnetic field. 147,43 deg in Lenghu (152.95 deg in ullastay??), Direction where we point to (incl +90)
   #outputfile: path and name of the outputfile (generally ending in .inp)
   #outmode:a for append, w to overwrite (it seems that it always append...)
   #RandomFraction: If you want to add a fraction of antenas spaced randomly (but uniformly random)

@@ -768,7 +768,17 @@ def GetHilbertPeakTimeFVFromAntennaP2PInfo(AntennaP2PInfo):
    #TODO: Handle errors
    return AntennaP2PInfo["HilbertPeakTimeFV"]
 
+def GetP2P_efieldFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2P_efield"]
 
+def GetP2P_voltageFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2P_voltage"]
+
+def GetP2P_filteredFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2P_filtered"]
 
 ########################################################################################################################
 # Create and Save traces
