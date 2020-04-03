@@ -164,7 +164,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
 
 
     if PRINT:
-        print 'produce input file ....', outputfile
+        print ("produce input file ...."+ outputfile)
 
         file= open(outputfile, outmode)
 
@@ -300,7 +300,7 @@ def CreateAiresInputHeader(TaskName, Primary, Zenith, Azimuth, Energy, RandomSee
 #RandomSeed. A number from [0 to 1). 0 is that the seed is generated automatically by the script. "Automatic", leaves the work of setting a random seed to Aires.
 #output
 
-  print 'produce input file header on:', OutputFile
+  print ("produce input file header on:"+ OutputFile)
 
   base=os.path.basename(OutputFile)
 
@@ -327,7 +327,7 @@ def CreateAiresInputHeader(TaskName, Primary, Zenith, Azimuth, Energy, RandomSee
 
 def CreateExampleSkeleton(OutputFile="TestInput.inp", OutMode="a"):
 
-  print 'produce example Skeleton ....', OutputFile
+  print ("produce example Skeleton ...."+ OutputFile)
 
   base=os.path.basename(OutputFile)
 
@@ -505,7 +505,7 @@ if __name__ == '__main__':
   #AddAiresSkeletonInp
 
   if np.size(sys.argv)<=4:
-    print "Arguments = zen (deg, Zhaires) az (deg, Zhaires) slope (deg) slope azimuth (deg)."
+    print ("Arguments = zen (deg, Zhaires) az (deg, Zhaires) slope (deg) slope azimuth (deg).")
 
   else:
     Zenith = float(sys.argv[1]) #in deg
@@ -513,7 +513,7 @@ if __name__ == '__main__':
     alpha = float(sys.argv[3]) #in deg
     az_slope = float(sys.argv[4]) #in deg
 
-    print "****Shower direction (zen, az) = ("+str(Zenith)+','+str(Azimuth) +") deg, Mountain slope = "+str(alpha)+","+str(az_slope)+" deg"
+    print ("****Shower direction (zen, az) = ("+str(Zenith)+','+str(Azimuth) +") deg, Mountain slope = "+str(alpha)+","+str(az_slope)+" deg")
 
     Primary="Proton"
     TaskName="TestShower"
