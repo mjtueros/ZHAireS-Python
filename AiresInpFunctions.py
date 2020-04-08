@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 # The index of refraction model will break if altitude is negative. So be carefull if you are going for inclined planes. There is a way to keep the pattern contained in the slope
 # see the code for hints on how to do this
 
-def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000.0, cone_ang=2.0, nant=20, az_B=0.0, zen_B=147.4, outputfile="TestInput.inp", outmode="a", RandomFraction = 0, stepmode="linear"):
+def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000.0, cone_ang=2.0, nant=20, az_B=0.0, zen_B=147.4, outputfile="TestInput.inp", outmode="a", RandomFraction = 0, stepmode="linear", projection="Geometric"):
 
   #==============================================================================
   #Original version from A. Zilles, extensivly modified by M. Tueros in Oct 2019
@@ -37,6 +37,9 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
   #RandomFraction: If you want to add a fraction of antenas spaced randomly (but uniformly random)
   #stepmode: 2 stepping modes are implemented: "linear" will go from 0 (not included) to cone_ang (included) in steps of cone_ang/nant
   #                                            "quadratic" will go from 0 (not included) to cone_ang (included) in cuadratic steps, with an offset
+  #projection: 2 projection modes are implemented: "geometric" wich projects the starshape paralel to the shower axis. This gives an elipse centered on 0,0
+  #                                                "conical" which projects the starshape through a cone with given vertex. This gives an elipse with 0,0 in the focus. This projection conserves the angle of the antenna with the shower direction
+
 
   # Here (x,y,z) = (Northing,Westing, Up). Alt ref at sea level.
   # Use Zhaires (theta, phi) convention: defined wrt direction of origin
@@ -94,9 +97,9 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
 
     # define mountain slope as plane which is always facing the shower
     az_mount=np.deg2rad(az_slope)
-    u=np.array([np.cos(az_mount+0.5*np.pi), np.sin(az_mount+0.5*np.pi),0.]) # always z=0, vector should be perp to shower axis = az_mount +0.5*pi
-    v=np.array([np.sin(0.5*np.pi-alpha)*np.cos(az_mount+np.pi), np.sin(0.5*np.pi-alpha)*np.sin(az_mount+np.pi), np.cos(0.5*np.pi-alpha) ]) # describes the mountain slope and should be perp to u,0.5*np.pi-alpha to account for mountain slope, az_mount+np.pi because slope pointing towards inverse dir of shower
-    n=np.cross(u,v)
+    umountain=np.array([np.cos(az_mount+0.5*np.pi), np.sin(az_mount+0.5*np.pi),0.]) # always z=0, vector should be perp to shower axis = az_mount +0.5*pi
+    vmountain=np.array([np.sin(0.5*np.pi-alpha)*np.cos(az_mount+np.pi), np.sin(0.5*np.pi-alpha)*np.sin(az_mount+np.pi), np.cos(0.5*np.pi-alpha) ]) # describes the mountain slope and should be perp to u,0.5*np.pi-alpha to account for mountain slope, az_mount+np.pi because slope pointing towards inverse dir of shower
+    n=np.cross(umountain,vmountain)
 
     #NOTE: z component of alpha flipped
     a =np.array([np.sin(zen_rad)*np.cos(az_rad), np.sin(zen_rad)*np.sin(az_rad), np.cos(zen_rad)]) # shower direction
@@ -109,14 +112,19 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
 
     d= h* np.tan(zen_rad)# shift length to respect shower axis
 
-    r0= np.array([0,0,h]) + d*a_op# +c* v #works like plane0, gives you the positions vector of the projection
+    r0= np.array([0,0,h]) + d*a_op# +c* vmountain #works like plane0, gives you the positions vector of the projection
 
     nrandom=int(nant*8*float(RandomFraction))
 
     #### star shape pattern in xyz
-    xyz1=np.zeros([nant*8+nrandom,3])
-    xyz=np.zeros([nant*8+nrandom,3])
+    xyz1=np.zeros([nant*8+nrandom,3]) # original starshape
+    xyz=np.zeros([nant*8+nrandom,3])  # projection
     xyz2=np.zeros([nant*8+nrandom,3]) # back trafo in vxvxB
+    xyz3=np.zeros([nant*8+nrandom,3]) # conical projection of starshape on ground
+
+    #position of xmax
+    XmaxPosition=v*cone_vertex
+
 
     max_ang = cone_ang*degtorad  # Most distant antenans are max_ang from axis
     linstep = cone_vertex*np.tan(max_ang)/nant
@@ -124,12 +132,18 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
       for i in np.arange(1,nant+1):   #AZ setup
         for j in np.arange(8):
           step= i*linstep
-          xyz0 = step*(np.cos(float(j/4.0)*np.pi)*vxB+np.sin(float(j/4.0)*np.pi)*vxvxB) # pattern in xyz     xyz0 # z*v=0, since z=0
+          xyz0 = step*(np.cos(float(j/4.0)*np.pi)*vxB+np.sin(float(j/4.0)*np.pi)*vxvxB) # pattern in xyz     xyz0 # z*vmountain=0, since z=0
           xyz1[(i-1)*8+j]=xyz0 # original starshape produced
 
           # intersection of shower and mountain plane
           b=-np.dot(n,xyz1[(i-1)*8+j])/ np.dot(n, a)
           xyz[(i-1)*8+j]= xyz1[(i-1)*8+j] +b*a +r0 # projected
+
+          # conical projection. In the line of the antenna to the vertex, we pick the position of the antenna, the position of the vertex, and look for the point at z=0 along the line
+          #parametric ecuaton of a line between p1 and p2 line =(1-u)*p1 + u*p2
+          #p1=xmax position p2=starshape position
+          u=(0.0-XmaxPosition[2])/(xyz0[2]-XmaxPosition[2])
+          xyz3[(i-1)*8+j]=(1-u)*XmaxPosition+u*xyz0
 
 
     cuadofset = 0.15 #it was 0.25 the first time we used it, but i want more antensas inside the cone. this requires max_ang to be more than 0.04...its small enough for all practical aplications
@@ -149,6 +163,13 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
           b=-np.dot(n,xyz1[(i-1)*8+j])/ np.dot(n, a)
           xyz[(i-1)*8+j]= xyz1[(i-1)*8+j] +b*a +r0 # projected
 
+          # conical projection. In the line of the antenna to the vertex, we pick the position of the antenna, the position of the vertex, and look for the point at z=0 along the line
+          #parametric ecuaton of a line between p1 and p2 line =(1-u)*p1 + u*p2
+          #p1=xmax position p2=starshape position
+          u=(0.0-XmaxPosition[2])/(xyz0[2]-XmaxPosition[2])
+          xyz3[(i-1)*8+j]=(1-u)*XmaxPosition+u*xyz0
+
+
     ##set of random test points
     for i in np.arange(0,nrandom):
 
@@ -162,6 +183,12 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
       b=-np.dot(n,xyz1[nant*8+i])/ np.dot(n, a)
       xyz[nant*8+i]= xyz1[nant*8+i] +b*a +r0 # projected
 
+      # conical projection. In the line of the antenna to the vertex, we pick the position of the antenna, the position of the vertex, and look for the point at z=0 along the line
+      #parametric ecuaton of a line between p1 and p2 line =(1-u)*p1 + u*p2
+      #p1=xmax position p2=starshape position
+      u=(0.0-XmaxPosition[2])/(xyz0[2]-XmaxPosition[2])
+      xyz3[nant*8+i]=(1-u)*XmaxPosition+u*xyz0
+
 
     if PRINT:
         print ("produce input file ...."+ outputfile)
@@ -169,99 +196,76 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
         file= open(outputfile, outmode)
 
         file.write('\n####################################################################################\n')
-        file.write('# Starshape Pattern created with CreateAiresStarshapeInp.py v1.1\n')
+        file.write('# Starshape Pattern created with CreateAiresStarshapeInp v1.2\n')
         file.write('# mountain slope: {0:.2f} deg\n'.format(alpha*radtodeg))
         file.write('# mountain azimuth: {0:.2f} deg\n'.format(az_slope))
         file.write('# cone vertex distance: {0:.3f} Km\n'.format(cone_vertex/1000.0))
         file.write('# cone angle: {0:.2f} deg\n'.format(cone_ang))
         file.write('# Number of Antennas per ray: {0:d}\n'.format(nant))
         file.write('# Separation Mode: {0:s}\n'.format(stepmode))
+        file.write('# Projection Mode: {0:s}\n'.format(projection))
         file.write('# Magnetic Field Zenith: {0:.2f} deg\n'.format(zen_B*radtodeg))
         file.write('# Magnetic Field Azimuth: {0:.2f} deg\n'.format(az_B*radtodeg))
-
         file.write('####################################################################################\n\n')
         file.write('ZHAireS On\n')
         file.write('FresnelTime On\n')
         for i in np.arange(nant*8):
+          if(projection=="geometric" or projection=="Geometric"):
             file.write("AddAntenna A{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(i),xyz[i,0],xyz[i,1],xyz[i,2]))
+          elif(projection=="conical" or projection=="Conical"):
+            file.write("AddAntenna A{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(i),xyz3[i,0],xyz3[i,1],xyz3[i,2]))
 
         file.write('####################################################################################\n\n')
         if(nrandom>0):
           file.write('#{0:d} Crosscheck Antennas  ########################################################\n\n'.format(nrandom))
         for i in np.arange(nrandom):
+          if(projection=="geometric" or projection=="Geometric"):
             file.write("AddAntenna CrossCheckA{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(nant*8+i),xyz[nant*8+i,0],xyz[nant*8+i,1],xyz[nant*8+i,2]))
+          elif(projection=="conical" or projection=="Conical"):
+            file.write("AddAntenna CrossCheckA{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(nant*8+i),xyz3[nant*8+i,0],xyz3[nant*8+i,1],xyz3[nant*8+i,2]))
+
         file.write('####################################################################################\n\n')
 
         file.close()
 
-#    if DISPLAY:
-#
-#      for i in np.arange(nant*8):
-#        xyz2[i]=GetUVW(xyz[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
-#
-#
-#      shower=np.zeros([200,3])
-#      mount_u=np.zeros([200,3])
-#      mount_v=np.zeros([200,3])
-#      for i in np.arange(0,200):
-#        shower[i]= (i-100)*100 *a +r0
-#        mount_u[i]= (i-100)*100 *u +r0
-#        mount_v[i]= (i-100)*100 *v +r0
-#      fig1=plt.figure(1, figsize=(12, 10), dpi=120, facecolor='w', edgecolor='k')
-#      title="zen_G="+str(zen_rad*radtodeg) + " az_G="+str(az_rad*radtodeg) + " slope=" +str(alpha*radtodeg)
-#      fig1.suptitle(title, fontsize=16)
-#
-#      #plt.subplot(221)
-#
-#      #plt.scatter(xyz[:,0],xyz[:,1], c='red')
-#      #plt.scatter(shower[:,0],shower[:,1], c='blue')
-#
-#      #plt.xlabel(r"x")
-#      #plt.ylabel(r"y") #, fontsize=16
-#      #plt.axis('equal')
-#
-#      #######
-#      #plt.subplot(222)
-#      #ax=plt.plot()
-#
-#      #plt.scatter(xyz[:,0],xyz[:,2], c='red', label="antennas")
-#      #plt.scatter(shower[:,0],shower[:,2], c='blue', label="shower axis")
-#      #plt.xlabel(r"x")
-#      #plt.ylabel(r"z") #, fontsize=16
-#      #plt.axis('equal')
-#      #plt.plot([min(shower[:,0]), max(shower[:,0])], [h_ulas, h_ulas], 'k-', label="Ulastai height")
-#      #plt.legend(loc='best')
-#
-#      #plt.show()
-#
-#      #######
-#      #plt.subplot(121)
-#      #ax=plt.plot()
-#      #plt.scatter(xyz1[:,1],xyz1[:,2], c='green') # produce star shape pattern
-#      #plt.scatter(xyz2[:,1],xyz2[:,2], c='yellow') # back transformed star shape pattern
-###     plt.scatter(shower[:,1],shower[:,2], c='blue')
-#      #plt.xlabel(r"vxB - back trafo ")
-#      #plt.ylabel(r"vxvxB - back trafo") #, fontsize=16
-#      #plt.axis('equal')
-#      #######
-#      #plt.subplot(122)
-#      #ax = fig1.add_subplot(224, projection='3d')
-#      plt.subplot(111)
-#      ax = fig1.add_subplot(111, projection='3d')
-#
-#      ax.scatter(xyz1[:,0],xyz1[:,1],xyz1[:,2], c='green') # produced star shape
-#      ax.scatter(xyz[:,0],xyz[:,1],xyz[:,2], c='red')  # projected
-#      ax.scatter(shower[:,0],shower[:,1],shower[:,2], c='blue')  # shower
-#      ax.scatter(mount_u[:,0],mount_u[:,1],mount_u[:,2], c='black')  # mountain
-#      ax.scatter(mount_v[:,0],mount_v[:,1],mount_v[:,2], c='black')  # mountain
-#      #ax.scatter(xyz3[:,0],xyz3[:,1],xyz3[:,2], c='yellow') # backtransformed
-#
-#      plt.axis('equal')
-#      plt.xlabel(r"x ")
-#      plt.ylabel(r"y") #, fontsize=16
-#      #plt.zlabel(r"z") #, fontsize=16
-#
-#      plt.show()
+    if DISPLAY:
+
+      #for i in np.arange(nant*8):
+      #  if(projection=="geometric" or projection=="Geometric"):
+      #    xyz2[i]=GetUVW(xyz[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
+      #  elif(projection=="conical" or projection=="Conical"):
+      #    xyz2[i]=GetUVW(xyz3[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
+
+      shower=np.zeros([200,3])
+      mount_u=np.zeros([200,3])
+      mount_v=np.zeros([200,3])
+      for i in np.arange(0,200):
+        shower[i]= (i-100)*100 *a +r0
+        mount_u[i]= (i-100)*100 *umountain +r0
+        mount_v[i]= (i-100)*100 *vmountain +r0
+      fig1=plt.figure(1, figsize=(12, 10), dpi=120, facecolor='w', edgecolor='k')
+      title="zen_G="+str(zen_rad*radtodeg) + " az_G="+str(az_rad*radtodeg) + " slope=" +str(alpha*radtodeg)
+      fig1.suptitle(title, fontsize=16)
+
+      from mpl_toolkits.mplot3d import Axes3D
+      ax = fig1.add_subplot(111, projection='3d')
+      ax.scatter(xyz1[:,0],xyz1[:,1],xyz1[:,2],label="(vxB, vxvxB) starshape")
+      if(projection=="geometric" or projection=="Geometric"):
+        ax.scatter(xyz[:,0],xyz[:,1],xyz[:,2],label="geometrical projection")
+      elif(projection=="conical" or projection=="Conical"):
+        ax.scatter(xyz3[:,0],xyz3[:,1],xyz3[:,2],label="conical projection")
+      #ax.scatter(xyz2[:,0],xyz2[:,1],xyz2[:,2],label="backprojection")
+      ax.plot(shower[:,0],shower[:,1],shower[:,2], c='blue',label="shower")  # shower
+      ax.plot(mount_u[:,0],mount_u[:,1],mount_u[:,2], c='black',label="mountainu")  # mountain
+      ax.plot(mount_v[:,0],mount_v[:,1],mount_v[:,2], c='red',label="mountainv")  # mountain
+
+      ax.set_xlabel('x')
+      ax.set_ylabel('y')
+      ax.set_zlabel('z')
+      plt.legend(loc = 'best')
+
+
+      plt.show()
 
 def mag(x):
     y=0
