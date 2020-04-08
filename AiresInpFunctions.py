@@ -222,7 +222,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
           if(projection=="geometric" or projection=="Geometric"):
             file.write("AddAntenna CrossCheckA{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(nant*8+i),xyz[nant*8+i,0],xyz[nant*8+i,1],xyz[nant*8+i,2]))
           elif(projection=="conical" or projection=="Conical"):
-            file.write("AddAntenna CrossCheckA{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(i),xyz3[i,0],xyz3[i,1],xyz3[i,2]))
+            file.write("AddAntenna CrossCheckA{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(nant*8+i),xyz3[nant*8+i,0],xyz3[nant*8+i,1],xyz3[nant*8+i,2]))
 
         file.write('####################################################################################\n\n')
 
