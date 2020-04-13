@@ -904,6 +904,8 @@ def get_p2p_hdf5(InputFilename,antennamax='All',antennamin=0,usetrace='efield'):
 
     if(antennamax=='All'):
      antennamax=len(CurrentAntennaInfo)-1
+    if(antennamax>len(CurrentAntennaInfo)-1):
+     antennamax=len(CurrentAntennaInfo)-1
 
     # create an array
     p2p_Ex = np.zeros(1+antennamax-antennamin)
