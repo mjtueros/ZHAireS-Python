@@ -10,8 +10,6 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-
-
 #This function generates the star shape positions for antennas on a slope, or on flat ground
 
 #Caveats: 1) You can have negative altitude antennas in the input, as long as the local altitude of the antena keeps being positive.
@@ -189,6 +187,31 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
       u=(0.0-XmaxPosition[2])/(xyz0[2]-XmaxPosition[2])
       xyz3[nant*8+i]=(1-u)*XmaxPosition+u*xyz0
 
+    #GetTmin AND Tmax
+
+    params=[-7.58890582e+01,  6.96201680e-01, -9.52616492e+02,  2.28302828e-02, 5.16280889e-01, -2.02393863e-03]
+    def LowTimeLimit(x, a, b, c, d,e,f):
+    #input XmaxDistance in km
+      if(x<2.5):
+        return -500
+      elif(x>141):
+        return -150
+      else:
+        return -110 + a + b*np.sqrt(x) + c/(x+d) + e*x + f*x*x
+
+    def HighTimeLimit(x,a, b, c, d,e,f):
+    #input XmaxDistance in km
+      if(x<0):
+        return 2500
+      elif(x>141):
+        return 150
+      elif(x>34):
+        return -(-110 + a + b*np.sqrt(x) + c/(x+d) + e*x + f*x*x)
+      else:
+        return 2500-69*x
+
+    Tmin=LowTimeLimit(cone_vertex/1000.0 - 3.0, params[0], params[1], params[2], params[3],params[4],params[5])
+    Tmax=HighTimeLimit(cone_vertex/1000.0 - 3.0, params[0], params[1], params[2], params[3],params[4],params[5])
 
     if PRINT:
         print ("produce input file ...."+ outputfile)
@@ -196,7 +219,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
         file= open(outputfile, outmode)
 
         file.write('\n####################################################################################\n')
-        file.write('# Starshape Pattern created with CreateAiresStarshapeInp v1.2\n')
+        file.write('# Starshape Pattern created with CreateAiresStarshapeInp v1.3\n')
         file.write('# mountain slope: {0:.2f} deg\n'.format(alpha*radtodeg))
         file.write('# mountain azimuth: {0:.2f} deg\n'.format(az_slope))
         file.write('# cone vertex distance: {0:.3f} Km\n'.format(cone_vertex/1000.0))
@@ -206,9 +229,14 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
         file.write('# Projection Mode: {0:s}\n'.format(projection))
         file.write('# Magnetic Field Zenith: {0:.2f} deg\n'.format(zen_B*radtodeg))
         file.write('# Magnetic Field Azimuth: {0:.2f} deg\n'.format(az_B*radtodeg))
+        file.write('# Adjusting time window with distance\n')
         file.write('####################################################################################\n\n')
         file.write('ZHAireS On\n')
         file.write('FresnelTime On\n')
+        file.write('AntennaTimeMin {0:0.1f} ns\n'.format(Tmin))
+        file.write('AntennaTimeMax {0:0.1f} ns\n'.format(Tmax))
+        file.write('ExpectedXmaxDist {0:0.1f} m\n'.format(cone_vertex-3000))
+
         for i in np.arange(nant*8):
           if(projection=="geometric" or projection=="Geometric"):
             file.write("AddAntenna A{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(i),xyz[i,0],xyz[i,1],xyz[i,2]))
@@ -230,11 +258,23 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
 
     if DISPLAY:
 
-      #for i in np.arange(nant*8):
-      #  if(projection=="geometric" or projection=="Geometric"):
-      #    xyz2[i]=GetUVW(xyz[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
-      #  elif(projection=="conical" or projection=="Conical"):
-      #    xyz2[i]=GetUVW(xyz3[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
+      for i in np.arange(nant*8):
+        if(projection=="geometric" or projection=="Geometric"):
+          xyz2[i]=GetUVW(xyz[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
+        elif(projection=="conical" or projection=="Conical"):
+         print("Antenna",i)
+         planeNormal=a
+         print("planeNormal",planeNormal)
+         planePoint=np.array([0,0,0]) #the starshape is always on the ground when generated for ZHAireS
+         print("planePoint",planePoint)
+         rayDirection=xyz3[i]-XmaxPosition
+         print("rayDirection",rayDirection)
+         rayPoint=XmaxPosition
+         print("rayPoint",rayPoint)
+         xyz2[i]=LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6)
+         print("collision",xyz2[i])
+         xyz2[i]=GetUVW(xyz2[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
+         print("UVW",xyz2[i])
 
       shower=np.zeros([200,3])
       mount_u=np.zeros([200,3])
@@ -254,15 +294,18 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
         ax.scatter(xyz[:,0],xyz[:,1],xyz[:,2],label="geometrical projection")
       elif(projection=="conical" or projection=="Conical"):
         ax.scatter(xyz3[:,0],xyz3[:,1],xyz3[:,2],label="conical projection")
-      #ax.scatter(xyz2[:,0],xyz2[:,1],xyz2[:,2],label="backprojection")
+      ax.scatter(xyz2[:,0],xyz2[:,1],xyz2[:,2],label="backprojection")
       ax.plot(shower[:,0],shower[:,1],shower[:,2], c='blue',label="shower")  # shower
       ax.plot(mount_u[:,0],mount_u[:,1],mount_u[:,2], c='black',label="mountainu")  # mountain
       ax.plot(mount_v[:,0],mount_v[:,1],mount_v[:,2], c='red',label="mountainv")  # mountain
-
       ax.set_xlabel('x')
       ax.set_ylabel('y')
       ax.set_zlabel('z')
       plt.legend(loc = 'best')
+
+      fig2=plt.figure(2, figsize=(12, 10), dpi=120, facecolor='w', edgecolor='k')
+      ax2 = fig2.add_subplot(111,projection='3d')
+      ax2.scatter(xyz2[:,1],xyz2[:,2],label="conical projection")
 
 
       plt.show()
@@ -292,6 +335,33 @@ def GetUVW(pos, cx, cy, cz, zen, az, phigeo, bfieldangle):
    vxvxB = vxvxB/np.linalg.norm(vxvxB)
 
    return np.array([np.dot(v,relpos),np.dot(vxB,relpos),np.dot(vxvxB,relpos)]).T # vector dot
+
+
+
+def LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6):
+
+	ndotu = planeNormal.dot(rayDirection)
+	if abs(ndotu) < epsilon:
+		raise RuntimeError("no intersection or line is within plane")
+
+	w = rayPoint - planePoint
+	si = -planeNormal.dot(w) / ndotu
+	Psi = w + si * rayDirection + planePoint
+	return Psi
+
+
+    ##Define plane
+	#planeNormal = np.array([0, 0, 1])
+	#planePoint = np.array([0, 0, 5]) #Any point on the plane
+
+	##Define ray
+	#rayDirection = np.array([0, -1, -1])
+	#rayPoint = np.array([0, 0, 10]) #Any point along the ray
+
+	#Psi = LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint)
+	#print ("intersection at", Psi)
+
+
 
 
 def CreateAiresInputHeader(TaskName, Primary, Zenith, Azimuth, Energy, RandomSeed=0.0, OutputFile="TestInput.inp", OutMode="a" ):
@@ -348,12 +418,6 @@ def CreateExampleSkeleton(OutputFile="TestInput.inp", OutMode="a"):
   file.write('\n#Set up thinning.\n')
   file.write('Thinning 1E-4 Rel\n')
   file.write('ThinningWFactor 0.06\n')
-  file.write('\n#Table Export\n')
-  file.write('Export 2001 O d\n')
-  file.write('Export 2205 O d\n')
-  file.write('Export 2207 O d\n')
-  file.write('Export 1205 O a\n')
-  file.write('Export 1207 O a\n')
   file.write('RLimsTables 100 m 3.5 km\n')
   file.write('\n#increase the number of observing levels (more detailed longitudinal files, at the expense of a bigger idf data file)\n')
   file.write('ObservingLevels 510 100.000 km 2.9 km\n')
