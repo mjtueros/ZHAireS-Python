@@ -118,7 +118,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     if(SignalSimInfo):
         #Getting all the information i need for SignalSimInfo
         FieldSimulator=AiresInfo.GetZHAireSVersionFromSry(sryfile[0])
-        FieldSimulator="ZHAireS "+FieldSimulator
+        FieldSimulator="ZHAireS "+str(FieldSimulator)
         RefractionIndexModel="Exponential"
         RefractionIndexParameters=[1.0003250,-0.1218]
         TimeBinSize=AiresInfo.GetTimeBinFromSry(sryfile[0])
@@ -503,10 +503,10 @@ if __name__ == '__main__':
 
   elif(mode=="minimal"):
 
-      ZHAiresReader(inputfolder, SignalSimInfo=False, AntennaInfo=False, AntennaTraces=False, NLongitudinal=False, ELongitudinal=False, NlowLongitudinal=False, ElowLongitudinal=False, EdepLongitudinal=False, LateralDistribution=False, EnergyDistribution=False)
+      ZHAiresReader(inputfolder, SignalSimInfo=True, AntennaInfo=True, AntennaTraces=True, NLongitudinal=False, ELongitudinal=False, NlowLongitudinal=False, ElowLongitudinal=False, EdepLongitudinal=False, LateralDistribution=False, EnergyDistribution=False)
 
 
   else:
 
-      printf("please enter one of these modes: standard, full or minimal")
+      print("please enter one of these modes: standard, full or minimal")
 

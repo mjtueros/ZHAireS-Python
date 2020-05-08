@@ -1,4 +1,3 @@
-
 import os
 import sys
 import numpy as np
@@ -9,6 +8,91 @@ import random
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+
+#set the time window as a function of xmaxdistance, in meters
+def CreateSmartTimeWindowInp(xmaxdistance,OutputFile):
+
+    file= open(OutputFile, "a")
+
+    params=[-7.58890582e+01,  6.96201680e-01, -9.52616492e+02,  2.28302828e-02, 5.16280889e-01, -2.02393863e-03]
+    def LowTimeLimit(x, a, b, c, d,e,f):
+    #input XmaxDistance in km
+      if(x<2.5):
+        return -500
+      elif(x>141):
+        return -150
+      else:
+        return -110 + a + b*np.sqrt(x) + c/(x+d) + e*x + f*x*x
+
+    def HighTimeLimit(x,a, b, c, d,e,f):
+    #input XmaxDistance in km
+      if(x<0):
+        return 2500
+      elif(x>141):
+        return 150
+      elif(x>34):
+        return -(-110 + a + b*np.sqrt(x) + c/(x+d) + e*x + f*x*x)
+      else:
+        return 2500-69*x
+
+    Tmin=LowTimeLimit(xmaxdistance/1000.0, params[0], params[1], params[2], params[3],params[4],params[5])
+    Tmax=200+HighTimeLimit(xmaxdistance/1000.0, params[0], params[1], params[2], params[3],params[4],params[5])
+
+    file.write('######################################################################################\n')
+    file.write('# Antenna TimeWindow created with CreateSmartTimeWindowInp v0.1                      #\n')
+    file.write('# Xmax Distance:{0:.2f} km\n'.format(xmaxdistance/1000))
+    file.write('######################################################################################\n')
+    file.write('AntennaTimeMin {0:0.1f} ns\n'.format(Tmin))
+    file.write('AntennaTimeMax {0:0.1f} ns\n'.format(Tmax))
+    file.write('ExpectedXmaxDist {0:0.1f} m\n'.format(xmaxdistance))
+    file.write('######################################################################################\n\n')
+
+
+
+#This function generate the AddaAntenna commands from an antenna list
+
+def CreateAiresAntennaListInp(AntennaPositions,OutputFile,AntennaNames=None,AntennaSelection='All'):
+
+#  AntennaPositions : numpy array with the antenna positions
+#  OutputFile will be where the the output will be directed. If the file exists, it will append it
+#  AntennaNames: None will name the antennas A0, A1, A2...etc
+#                if a list of string is entered, it will use those names.
+#  AntennaSelection: All - uses all the antennas
+#                    if an array of indices is entered, only antennas on that index will be used
+    file= open(OutputFile, "a")
+
+    file.write('\n####################################################################################\n')
+    file.write('# Antenna List created with CreateAntennaListInp v0.1                              #\n')
+    file.write('####################################################################################\n')
+
+    nantennnas=len(AntennaPositions[:,1])
+
+    if(len(AntennaSelection)==1):
+      if(AntennaSelection=="All" or AntennaSelection=="all"):
+        AntennaSelection=np.arange(0,nanntenas)
+
+    if(AntennaNames==None):
+      AntennaNames=[]
+      for i in range(0,nantennnas):
+        AntennaNames.append("None")
+      for i in AntennaSelection:
+        AntennaNames[i]="A"+str(i)
+
+    for i in AntennaSelection:
+
+      file.write("AddAntenna {0:s} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(AntennaNames[i],AntennaPositions[i,0],AntennaPositions[i,1],AntennaPositions[i,2]))
+
+
+    file.write('####################################################################################\n')
+    file.write('FresnelTime On\n')
+    file.write('ZHAireS On\n')
+    file.write('####################################################################################\n')
+    file.write('# CreateAntennaListInp Finished                                                    #\n')
+    file.write('####################################################################################\n\n')
+
+    file.close()
+
 
 #This function generates the star shape positions for antennas on a slope, or on flat ground
 
@@ -71,8 +155,6 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
     #theta_ch=np.arccos(1./n_ref)
     y= -cone_vertex * np.sin(theta_ch)*np.cos(zen_rad-alpha+theta_ch)/( (np.sin(zen_rad-alpha))**2. -(np.cos(theta_ch))**2.  ) # major axis od ellipse
     h= np.sin(alpha) *y # height of antenna array center on the mountain, if complete shower should be on the mountain
-
-
 
 
     ### Create star shape in GRAND coordinates
@@ -211,7 +293,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
         return 2500-69*x
 
     Tmin=LowTimeLimit(cone_vertex/1000.0 - 3.0, params[0], params[1], params[2], params[3],params[4],params[5])
-    Tmax=HighTimeLimit(cone_vertex/1000.0 - 3.0, params[0], params[1], params[2], params[3],params[4],params[5])
+    Tmax=200+HighTimeLimit(cone_vertex/1000.0 - 3.0, params[0], params[1], params[2], params[3],params[4],params[5])
 
     if PRINT:
         print ("produce input file ...."+ outputfile)
