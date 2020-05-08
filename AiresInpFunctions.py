@@ -211,7 +211,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
         return 2500-69*x
 
     Tmin=LowTimeLimit(cone_vertex/1000.0 - 3.0, params[0], params[1], params[2], params[3],params[4],params[5])
-    Tmax=HighTimeLimit(cone_vertex/1000.0 - 3.0, params[0], params[1], params[2], params[3],params[4],params[5])
+    Tmax=200 + HighTimeLimit(cone_vertex/1000.0 - 3.0, params[0], params[1], params[2], params[3],params[4],params[5])
 
     if PRINT:
         print ("produce input file ...."+ outputfile)
