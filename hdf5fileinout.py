@@ -2,9 +2,9 @@
 from astropy.table import Table, Column
 from astropy import units as u
 import numpy as np
-#import matplotlib as mpl
+import matplotlib as mpl
 #mpl.use('Agg')
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 
 ################################################################################################################################
@@ -202,7 +202,15 @@ def GetAntennaEfield(InputFilename,EventName,AntennaName,OutputFormat="numpy"):
    #TODO: Handle error when "EventName/AntennaTraces/AntennaName" does not exsists
    #TODO: Handle error when "EventName/AntennaTraces/AntennaName/Efield" does not exsists
    #TODO: Handle error when "InputFilename" is not a file, or a valid file.
-   EfieldTrace=Table.read(InputFilename, path=str(EventName)+"/AntennaTraces/"+str(AntennaName)+"/efield")
+
+   try:
+     EfieldTrace=Table.read(InputFilename, path=str(EventName)+"/AntennaTraces/"+str(AntennaName)+"/efield")
+   except:
+     EfieldTrace=np.zeros((4,4))
+     print("efield trace not found")
+     return EfieldTrace
+
+
    if(OutputFormat=="numpy"):
      EfieldTrace=np.array([EfieldTrace['Time'], EfieldTrace['Ex'],EfieldTrace['Ey'],EfieldTrace['Ez']]).T
    return EfieldTrace
@@ -213,7 +221,13 @@ def GetAntennaVoltage(InputFilename,EventName,AntennaName,OutputFormat="numpy"):
    #TODO: Handle error when "EventName/AntennaTraces/AntennaName" does not exsists
    #TODO: Handle error when "EventName/AntennaTraces/AntennaName/Efield" does not exsists
    #TODO: Handle error when "InputFilename" is not a file, or a valid file.
-   VoltageTrace=Table.read(InputFilename, path=str(EventName)+"/AntennaTraces/"+str(AntennaName)+"/voltage")
+   try:
+     VoltageTrace=Table.read(InputFilename, path=str(EventName)+"/AntennaTraces/"+str(AntennaName)+"/voltage")
+   except:
+     VoltageTrace=np.zeros((4,4))
+     print("voltage trace not found")
+     return VoltageTrace
+
    if(OutputFormat=="numpy"):
      VoltageTrace=np.array([VoltageTrace['Time'], VoltageTrace['Vx'],VoltageTrace['Vy'],VoltageTrace['Vz']]).T
    return VoltageTrace
@@ -224,7 +238,14 @@ def GetAntennaFilteredVoltage(InputFilename,EventName,AntennaName,OutputFormat="
    #TODO: Handle error when "EventName/AntennaTraces/AntennaName" does not exsists
    #TODO: Handle error when "EventName/AntennaTraces/AntennaName/Efield" does not exsists
    #TODO: Handle error when "InputFilename" is not a file, or a valid file.
-   VoltageTrace=Table.read(InputFilename, path=str(EventName)+"/AntennaTraces/"+str(AntennaName)+"/filteredvoltage")
+
+   try:
+     VoltageTrace=Table.read(InputFilename, path=str(EventName)+"/AntennaTraces/"+str(AntennaName)+"/filteredvoltage")
+   except:
+     VoltageTrace=np.zeros((4,4))
+     print("filteredvoltage trace not found")
+     return VoltageTrace
+
    if(OutputFormat=="numpy"):
      VoltageTrace=np.array([VoltageTrace['Time'], VoltageTrace['Vx'],VoltageTrace['Vy'],VoltageTrace['Vz']]).T
    return VoltageTrace
@@ -1045,6 +1066,689 @@ def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, use
 
     return peaktime, peakamplitude
 
+
+
+
+#TODO: Split this in 2 functions: GeFluenceFromTrace(Trace) to get the fluence (this is not an hdf5io function)
+#      use it in GetEventHilbert(InputFilename, CurrentEventName) to get them for all the antennas in the event
+def get_fluence_hdf5(InputFilename, antennamax="All",antennamin=0, windowsize="All", usetrace="efield", DISPLAY=False) :
+
+    #TODO: Handle Errors
+    '''
+    read in all traces from antennamax to antennamin and output the fluence (integral of the square of th emplitude, optionally in a window
+    Parameters:
+    InputFilename: str
+        HDF5File
+    antennamin: int
+       starting antenna (starts from 0)
+    antennamax: int
+       final antenna ('All uses all the antennas)
+    usetrace: str
+       efield, voltage, filteredvoltage
+    Windowsize:
+       All uses all the trace.
+       any number gives the size in nanoseconds of a time window centered arrround the maximum of the hilbert envelope
+
+    Output:
+    fluence: numpy array with the fluence, computed as the sum of the trace squared
+    fluence(0,:) fluence of the modulus
+    fluence(1,:) fluence in x
+    fluence(2,:) fluence in y
+    fluence(3,:) fluence in z
+    '''
+
+    CurrentRunInfo=GetRunInfo(InputFilename)
+    CurrentEventName=GetEventName(CurrentRunInfo,0) #using the first event of each file (there is only one for now)
+    CurrentAntennaInfo=GetAntennaInfo(InputFilename,CurrentEventName)
+    CurrentSignalSimInfo=GetSignalSimInfo(InputFilename,CurrentEventName)
+    binsize=GetTimeBinSize(CurrentSignalSimInfo)
+    tmin=GetTimeWindowMin(CurrentSignalSimInfo)
+
+    binsize=binsize*1E-9 #need it in seconds
+    #now, arrange the units:
+    c=299792458 #m*s
+    epsilon0=8.854187817E-12 #Farads/m
+    #uV2V = 1E-12 #uv to v squared
+    #J2eV = 6.241509E+18 #Joules to eV
+    if(usetrace=='efield'):
+      fluenceunit= c*epsilon0*binsize*6.241509E6 # eV/m2
+      if(windowsize!="All" and windowsize!="all"):
+        CurrentAntennaP2PInfo=GetAntennaP2PInfo(InputFilename,CurrentEventName)
+        tpeak=GetHilbertPeakTimeEFromAntennaP2PInfo(CurrentAntennaP2PInfo)
+    elif(usetrace=='voltage'):
+      fluenceunit= binsize*6.241509E6/376.73 #eV impedance of free space
+      if(windowsize!="All" and windowsize!="all"):
+        CurrentAntennaP2PInfo=GetAntennaP2PInfo(InputFilename,CurrentEventName)
+        tpeak=GetHilbertPeakTimeVFromAntennaP2PInfo(CurrentAntennaP2PInfo)
+    elif(usetrace=='filteredvoltage'):
+      fluenceunit= binsize*6.241509E6/376.73 #eV impedance of free space
+      if(windowsize!="All" and windowsize!="all"):
+        CurrentAntennaP2PInfo=GetAntennaP2PInfo(InputFilename,CurrentEventName)
+        tpeak=GetHilbertPeakTimeFVFromAntennaP2PInfo(CurrentAntennaP2PInfo)
+
+    binsize=binsize*1E9 #back to ns
+
+    if(antennamax=='All' or antennamax=='all'):
+      antennamax=len(CurrentAntennaInfo)-1
+
+    fluence= np.zeros(1+antennamax-antennamin)
+    xfluence= np.zeros(1+antennamax-antennamin)
+    yfluence= np.zeros(1+antennamax-antennamin)
+    zfluence= np.zeros(1+antennamax-antennamin)
+
+
+    for i in range(antennamin,antennamax+1):
+      AntennaID=GetAntennaID(CurrentAntennaInfo,i)
+      if(usetrace=='efield'):
+        trace=GetAntennaEfield(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      elif(usetrace=='voltage'):
+        trace=GetAntennaVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      elif(usetrace=='filteredvoltage'):
+        trace=GetAntennaFilteredVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      else:
+        print('You must specify either efield, voltage or filteredvoltage, bailing out')
+        return -1,-1,-1,-1
+
+      #pass time window to bins
+      if(windowsize=="All" or windowsize=="all"):
+        binmin=0
+        binmax=len(trace[:,1])
+      else:
+        tracestart=trace[0,0]
+
+        binpeak= int((tpeak[i]-tracestart)/binsize)
+
+        binmin= int(binpeak-windowsize/(2.0*binsize))
+        binmax= int(binpeak+windowsize/(2.0*binsize)+1)
+
+
+
+        if(binmin<0):
+
+         from scipy.signal import hilbert
+         #now, this is not doing exactly what i was expecting (the hilbert of each component separately. When i plot it, it seems to be mixing channels up)
+         #however, it does get the maximum of the modulus of the signal (but i dont understand whats really going on!)
+         hilbert_trace=hilbert(trace[:,1:4])
+         hilbert_amp = np.abs(hilbert_trace)
+
+         #print("underflow bin",binmin,binpeak,binmax,tracestart,tpeak[i])
+         if(binmin<-windowsize/(4*binsize)):
+           binmin=-1
+         else:
+           binmin=0
+
+        if(binmax>len(trace[:,1])):
+         #print("overflow bin",binmin,binpeak,binmax, tracestart,tpeak[i],(tpeak[i]-tracestart) )
+
+         if(binmin==-1 or binmax > len(trace[:,1])+windowsize/(4*binsize)):
+          #print(" peak is too close to the limits")
+          binmax=-1
+          binmin=-1
+         else:
+          binmax=len(trace[:,1])
+
+        if(binmin==-1):
+          binmin=-1
+          binmax=-1
+
+
+        if(DISPLAY and (binmin==-1 or binmax==-1)):
+          fig1a=plt.figure(figsize=(8,6))
+          ax31 = plt.subplot(2,2,1)
+          im=ax31.plot(trace[:,0],trace[:,1])
+          tmp=ax31.set(title="X Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+          ax32 = plt.subplot(2,2,2)
+          im=ax32.plot(trace[:,0],trace[:,2])
+          tmp=ax32.set(title="Y Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+          ax33 = plt.subplot(2,2,3)
+          im=ax33.plot(trace[:,0],trace[:,3])
+          tmp=ax33.set(title="Z Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+          ax33 = plt.subplot(2,2,4)
+          im=ax33.plot(trace[25:-25,0],hilbert_amp[25:-25,0])
+          im=ax33.plot(trace[25:-25,0],hilbert_amp[25:-25,1])
+          im=ax33.plot(trace[25:-25,0],hilbert_amp[25:-25,2])
+          tmp=ax33.set(title="||2 Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+          plt.show()
+
+
+        #print("result",binmin,binpeak,binmax)
+
+    #i will be computing the square of the trace
+      #norm of trace
+      norm=np.linalg.norm(trace[binmin:binmax,1:4],axis=1)
+      #sum
+      fluence[i-antennamin]=np.sum(norm*norm)
+
+    #and then the fluence in each component.
+      xtrace=trace[binmin:binmax,1]
+      xfluence[i-antennamin]=np.sum(xtrace*xtrace)
+      ytrace=trace[binmin:binmax,2]
+      yfluence[i-antennamin]=np.sum(ytrace*ytrace)
+      ztrace=trace[binmin:binmax,3]
+      zfluence[i-antennamin]=np.sum(ztrace*ztrace)
+    #end for
+
+
+    fluence= fluenceunit*fluence
+    xfluence= fluenceunit*xfluence
+    yfluence= fluenceunit*yfluence
+    zfluence= fluenceunit*zfluence
+
+
+    if(DISPLAY):
+
+      X=GetXFromAntennaInfo(CurrentAntennaInfo)
+      Y=GetYFromAntennaInfo(CurrentAntennaInfo)
+      X=X[antennamin:antennamax+1]
+      Y=Y[antennamin:antennamax+1]
+
+      if(usetrace=='efield'):
+        title="Fluence "
+        unit= "$meV/m^2$"
+      else:
+        title="Integrated Power"
+        unit= "$meV$"
+
+      #done with event 3419 of the database
+      plt.rc('font', family='serif', size=15)
+      fig1a=plt.figure(figsize=(8,6))
+      ax3a = plt.subplot(2,2,1)
+      im=ax3a.scatter(X,Y,c=fluence*1000,s=15,cmap=plt.cm.jet)
+      tmp=ax3a.set(title="Energy "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3a.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1a.colorbar(im,ax=ax3a)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+
+      ax3b = plt.subplot(2,2,2)
+      im=ax3b.scatter(X,Y,c=xfluence*1000,s=15,cmap=plt.cm.jet)
+      tmp=ax3b.set(title="X Energy "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3b.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1a.colorbar(im,ax=ax3b)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+
+
+      ax3c = plt.subplot(2,2,3)
+      im=ax3c.scatter(X,Y,c=yfluence*1000,s=15,cmap=plt.cm.jet)
+      tmp=ax3c.set(title="Y Energy "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3c.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1a.colorbar(im,ax=ax3c)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+
+      ax3d = plt.subplot(2,2,4)
+      im=ax3d.scatter(X,Y,c=zfluence*1000,s=15,cmap=plt.cm.jet)
+      tmp=ax3d.set(title="Z Energy "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3d.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1a.colorbar(im,ax=ax3d)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+      plt.show()
+
+
+    return fluence, xfluence, yfluence, zfluence
+
+
+
+
+#TODO: Split this in 2 functions: GeFluenceFromTrace(Trace) to get the fluence (this is not an hdf5io function)
+#      use it in GetEventHilbert(InputFilename, CurrentEventName) to get them for all the antennas in the event
+def get_time_amplitudes_fluence_hdf5(InputFilename, antennamax="All",antennamin=0, windowsize=200, usetrace="efield", DISPLAY=False) :
+
+    #TODO: Handle Errors
+    '''
+    read in all traces from antennamax to antennamin and output P2P amplitude, The fluence and the peak position,
+    taking into account to exclude the borders for windowsize/4 (to avoid fourier glitchs), and asking that the peak is at least  at windowsize/2 from the border.
+
+    Parameters:
+    InputFilename: str
+        HDF5File
+    antennamin: int
+       starting antenna (starts from 0)
+    antennamax: int
+       final antenna ('All uses all the antennas)
+    usetrace: str
+       efield, voltage, filteredvoltage
+    Windowsize:
+       All uses all the trace.
+       any number gives the size in nanoseconds of a time window centered arrround the maximum of the hilbert envelope
+
+    Output: p2p,peak,fluence
+
+    '''
+
+    CurrentRunInfo=GetRunInfo(InputFilename)
+    CurrentEventName=GetEventName(CurrentRunInfo,0) #using the first event of each file (there is only one for now)
+    CurrentAntennaInfo=GetAntennaInfo(InputFilename,CurrentEventName)
+    CurrentSignalSimInfo=GetSignalSimInfo(InputFilename,CurrentEventName)
+    binsize=GetTimeBinSize(CurrentSignalSimInfo)
+    tmin=GetTimeWindowMin(CurrentSignalSimInfo)
+    tmax=GetTimeWindowMax(CurrentSignalSimInfo)
+    windowbin=int(windowsize/binsize)
+    qwindowbin=int(windowbin/4)
+
+    #print("binsize:",binsize,"tmin:",tmin,"tmax:",tmax,"wbin:",windowbin,"qwbin:",qwindowbin)
+
+    #now, arrange the units:
+    c=299792458 #m*s
+    epsilon0=8.854187817E-12 #Farads/m
+    #uV2V = 1E-12 #uv to v squared
+    #J2eV = 6.241509E+18 #Joules to eV
+    if(usetrace=='efield'):
+      fluenceunit= c*epsilon0*binsize*1E-9*6.241509E6 # eV/m2
+    elif(usetrace=='voltage'):
+      fluenceunit= binsize*1E-9*6.241509E6/376.73 #eV impedance of free space
+    elif(usetrace=='filteredvoltage'):
+      fluenceunit= binsize*1E-9*6.241509E6/376.73 #eV impedance of free space
+
+    #handlte the "all" situation
+    if(antennamax=='All' or antennamax=='all'):
+      antennamax=len(CurrentAntennaInfo)-1
+
+    peaktime= np.zeros(1+antennamax-antennamin)
+    peakamplitude= np.zeros(1+antennamax-antennamin)
+    peakbin= np.zeros(1+antennamax-antennamin)
+
+    p2p_x = np.zeros(1+antennamax-antennamin)
+    p2p_y = np.zeros(1+antennamax-antennamin)
+    p2p_z = np.zeros(1+antennamax-antennamin)
+    p2p_total = np.zeros(1+antennamax-antennamin)
+    p2p=np.zeros(1+antennamax-antennamin)
+
+    fluence= np.zeros(1+antennamax-antennamin)
+    xfluence= np.zeros(1+antennamax-antennamin)
+    yfluence= np.zeros(1+antennamax-antennamin)
+    zfluence= np.zeros(1+antennamax-antennamin)
+
+
+    for i in range(antennamin,antennamax+1):
+      AntennaID=GetAntennaID(CurrentAntennaInfo,i)
+      if(usetrace=='efield'):
+        trace=GetAntennaEfield(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      elif(usetrace=='voltage'):
+        trace=GetAntennaVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      elif(usetrace=='filteredvoltage'):
+        trace=GetAntennaFilteredVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      else:
+        print('You must specify either efield, voltage or filteredvoltage, bailing out')
+        return -1,-1,-1
+
+
+      from scipy.signal import hilbert
+      #now, this is not doing exactly what i was expecting (the hilbert of each component separately. When i plot it, it seems to be mixing channels up)
+      #however, it does get the maximum of the modulus of the signal (but i dont understand whats really going on!)
+
+      #im cutting one quarter of the time window from each side of the trace, to remove the artifacts from the fourier transform.
+      #and im asking that the peak is not half of the time window from the border, to assure that is a safe trace
+
+      tracesize=len(trace[:,0])
+
+      hilbert_trace=hilbert(trace[:,1:4])
+      hilbert_amp = np.abs(hilbert_trace) 												                     #enveloppe de hilbert x, y, z channels
+      peakamplitude[i-antennamin]=max([max(hilbert_amp[qwindowbin:-qwindowbin,0]), max(hilbert_amp[qwindowbin:-qwindowbin,1]), max(hilbert_amp[qwindowbin:-qwindowbin,2])]) #find best peakamp for the 3 channels
+      peakamplitudelocation=np.where(hilbert_amp == peakamplitude[i-antennamin])
+
+      #this is to assure that there is a maximum amplitude, at that its unique, and that it could be found far from the borders
+      if(peakamplitude[i-antennamin]!=0.0 and np.shape(peakamplitudelocation)==(2,1)):
+        if(peakamplitudelocation[0]>2*qwindowbin and peakamplitudelocation[0]< tracesize-2*qwindowbin ):
+          peaktime[i-antennamin]=trace[peakamplitudelocation[0],0]                # get the time of the peak amplitude
+          peakbin[i-antennamin]= peakamplitudelocation[0]
+        #here, we have the chance that there is a peak glitch in the begining
+        elif(peakamplitudelocation[0]>qwindowbin and peakamplitudelocation[0]< tracesize-qwindowbin):
+
+          if(max([max(hilbert_amp[0:qwindowbin,0]), max(hilbert_amp[0:qwindowbin,1]), max(hilbert_amp[0:qwindowbin,2])])<peakamplitude[i-antennamin] and max([max(hilbert_amp[-qwindowbin:,0]), max(hilbert_amp[-qwindowbin:,1]), max(hilbert_amp[-qwindowbin:,2])])<peakamplitude[i-antennamin]):
+              print("its close to the border, but there does not seem to be a glitch")
+              peaktime[i-antennamin]=trace[peakamplitudelocation[0],0]                # get the time of the peak amplitude
+              peakbin[i-antennamin]= peakamplitudelocation[0]
+
+              if(DISPLAY):
+                  fig1a=plt.figure(figsize=(8,6))
+                  ax31 = plt.subplot(2,2,1)
+                  im=ax31.plot(trace[:,0],trace[:,1])
+                  im=ax31.plot( np.full(10,peaktime[i-antennamin]), np.linspace(min(trace[:,1]),max(trace[:,1]),10))
+                  tmp=ax31.set(title="X Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+                  ax32 = plt.subplot(2,2,2)
+                  im=ax32.plot(trace[:,0],trace[:,2])
+                  im=ax32.plot(np.full(10,peaktime[i-antennamin]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+                  tmp=ax32.set(title="Y Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+                  ax33 = plt.subplot(2,2,3)
+                  im=ax33.plot(trace[:,0],trace[:,3])
+                  im=ax33.plot(np.full(10,peaktime[i-antennamin]),np.linspace(min(trace[:,3]),max(trace[:,3]),10))
+                  tmp=ax33.set(title="Z Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+                  ax34 = plt.subplot(2,2,4)
+                  im=ax34.plot(trace[:,0],hilbert_amp[:,0])
+                  im=ax34.plot(trace[:,0],hilbert_amp[:,1])
+                  im=ax34.plot(trace[:,0],hilbert_amp[:,2])
+                  im=ax34.plot( np.full(10,peaktime[i-antennamin]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+                  im=ax34.plot( np.full(10,trace[0,0]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+                  im=ax34.plot( np.full(10,trace[qwindowbin,0]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+                  im=ax34.plot( np.full(10,trace[2*qwindowbin,0]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+                  tmp=ax34.set(title="||2 Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+              plt.show()
+          else:
+              print("glitch")
+
+              if(DISPLAY):
+                  peaktime[i-antennamin]=trace[peakamplitudelocation[0],0]                # get the time of the peak amplitude
+                  peakbin[i-antennamin]= peakamplitudelocation[0]
+
+                  fig1a=plt.figure(figsize=(8,6))
+                  ax31 = plt.subplot(2,2,1)
+                  im=ax31.plot(trace[:,0],trace[:,1])
+                  im=ax31.plot( np.full(10,peaktime[i-antennamin]), np.linspace(min(trace[:,1]),max(trace[:,1]),10))
+                  tmp=ax31.set(title="X Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+                  ax32 = plt.subplot(2,2,2)
+                  im=ax32.plot(trace[:,0],trace[:,2])
+                  im=ax32.plot(np.full(10,peaktime[i-antennamin]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+                  tmp=ax32.set(title="Y Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+                  ax33 = plt.subplot(2,2,3)
+                  im=ax33.plot(trace[:,0],trace[:,3])
+                  im=ax33.plot(np.full(10,peaktime[i-antennamin]),np.linspace(min(trace[:,3]),max(trace[:,3]),10))
+                  tmp=ax33.set(title="Z Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+                  ax34 = plt.subplot(2,2,4)
+                  im=ax34.plot(trace[:,0],hilbert_amp[:,0])
+                  im=ax34.plot(trace[:,0],hilbert_amp[:,1])
+                  im=ax34.plot(trace[:,0],hilbert_amp[:,2])
+                  im=ax34.plot( np.full(10,peaktime[i-antennamin]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+                  im=ax34.plot( np.full(10,trace[0,0]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+                  im=ax34.plot( np.full(10,trace[qwindowbin,0]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+                  im=ax34.plot( np.full(10,trace[2*qwindowbin,0]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+                  tmp=ax34.set(title="||2 Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+                  plt.show()
+
+              peaktime[i-antennamin]=-1e22
+              peakbin[i-antennamin]=-1e22
+              peakamplitude[i-antennamin]=-1e22
+
+              p2p_x[i-antennamin]= -1e22
+              p2p_y[i-antennamin]= -1e22
+              p2p_z[i-antennamin]= -1e22
+              p2p_total[i-antennamin]= -1e22
+
+              fluence[i-antennamin]= -1e22
+              xfluence[i-antennamin]= -1e22
+              yfluence[i-antennamin]= -1e22
+              zfluence[i-antennamin]= -1e22
+
+              continue
+
+        else:
+          print("too close to the border")
+
+          if(DISPLAY):
+              fig1a=plt.figure(figsize=(8,6))
+              ax31 = plt.subplot(2,2,1)
+              im=ax31.plot(trace[:,0],trace[:,1])
+              im=ax31.plot( np.full(10,peaktime[i-antennamin]), np.linspace(min(trace[:,1]),max(trace[:,1]),10))
+              tmp=ax31.set(title="X Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+              ax32 = plt.subplot(2,2,2)
+              im=ax32.plot(trace[:,0],trace[:,2])
+              im=ax32.plot(np.full(10,peaktime[i-antennamin]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+              tmp=ax32.set(title="Y Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+              ax33 = plt.subplot(2,2,3)
+              im=ax33.plot(trace[:,0],trace[:,3])
+              im=ax33.plot(np.full(10,peaktime[i-antennamin]),np.linspace(min(trace[:,3]),max(trace[:,3]),10))
+              tmp=ax33.set(title="Z Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+              ax34 = plt.subplot(2,2,4)
+              im=ax34.plot(trace[:,0],hilbert_amp[:,0])
+              im=ax34.plot(trace[:,0],hilbert_amp[:,1])
+              im=ax34.plot(trace[:,0],hilbert_amp[:,2])
+              im=ax34.plot( np.full(10,peaktime[i-antennamin]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+              im=ax34.plot( np.full(10,trace[0,0]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+              im=ax34.plot( np.full(10,trace[qwindowbin,0]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+              im=ax34.plot( np.full(10,trace[2*qwindowbin,0]),np.linspace(min(trace[:,2]),max(trace[:,2]),10))
+              tmp=ax34.set(title="||2 Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+          peaktime[i-antennamin]=-1e21
+          peakbin[i-antennamin]=-1e21
+          peakamplitude[i-antennamin]=-1e21
+
+          p2p_x[i-antennamin]= -1e21
+          p2p_y[i-antennamin]= -1e21
+          p2p_z[i-antennamin]= -1e21
+          p2p_total[i-antennamin]= -1e21
+
+          fluence[i-antennamin]= -1e21
+          xfluence[i-antennamin]= -1e21
+          yfluence[i-antennamin]= -1e21
+          zfluence[i-antennamin]= -1e21
+
+
+          plt.show()
+
+          continue
+
+      else:
+        print("multiple peaks, 0, or other error")
+
+        if(DISPLAY):
+            fig1a=plt.figure(figsize=(8,6))
+            ax31 = plt.subplot(2,2,1)
+            im=ax31.plot(trace[:,0],trace[:,1])
+            tmp=ax31.set(title="X Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+            ax32 = plt.subplot(2,2,2)
+            im=ax32.plot(trace[:,0],trace[:,2])
+            tmp=ax32.set(title="Y Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+            ax33 = plt.subplot(2,2,3)
+            im=ax33.plot(trace[:,0],trace[:,3])
+            tmp=ax33.set(title="Z Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+            ax34 = plt.subplot(2,2,4)
+            im=ax34.plot(trace[:,0],hilbert_amp[:,0])
+            im=ax34.plot(trace[:,0],hilbert_amp[:,1])
+            im=ax34.plot(trace[:,0],hilbert_amp[:,2])
+            tmp=ax34.set(title="||2 Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
+
+        plt.show()
+
+        peaktime[i-antennamin]=-1e20
+        peakbin[i-antennamin]=-1e20
+        peakamplitude[i-antennamin]=-1e20
+
+        p2p_x[i-antennamin]= -1e20
+        p2p_y[i-antennamin]= -1e20
+        p2p_z[i-antennamin]= -1e20
+        p2p_total[i-antennamin]= -1e20
+
+        fluence[i-antennamin]= -1e20
+        xfluence[i-antennamin]= -1e20
+        yfluence[i-antennamin]= -1e20
+        zfluence[i-antennamin]= -1e20
+        continue
+
+      #P2P
+      p2p= np.amax(trace[qwindowbin:-qwindowbin],axis=0)-np.amin(trace,axis=0)
+      p2p_x[i-antennamin]= p2p[1]
+      p2p_y[i-antennamin]= p2p[2]
+      p2p_z[i-antennamin]= p2p[3]
+
+      amplitude = np.sqrt(trace[qwindowbin:-qwindowbin,1]**2. + trace[qwindowbin:-qwindowbin,2]**2. + trace[qwindowbin:-qwindowbin,3]**2.) # combined components
+
+      p2p_total[i-antennamin] = max(amplitude)-min(amplitude)
+
+      binpeak= peakbin[i-antennamin]
+      binmin= int(binpeak-2*qwindowbin)
+      binmax= int(binpeak+2*qwindowbin)
+
+      if(binmin<0):
+       print("underflow bin",binmin,binpeak,binmax)
+       binmin=0
+      if(binmax>tracesize):
+       print("overflow bin",binmin,binpeak,binmax)
+       binmax=tracesize
+
+
+      #FLUENCE
+      #i will be computing the square of the trace
+      #norm of trace
+      norm=np.linalg.norm(trace[binmin:binmax,1:4],axis=1)
+      #sum
+      fluence[i-antennamin]=np.sum(norm*norm)
+
+      #and then the fluence in each component.
+      xtrace=trace[binmin:binmax,1]
+      xfluence[i-antennamin]=np.sum(xtrace*xtrace)
+      ytrace=trace[binmin:binmax,2]
+      yfluence[i-antennamin]=np.sum(ytrace*ytrace)
+      ztrace=trace[binmin:binmax,3]
+      zfluence[i-antennamin]=np.sum(ztrace*ztrace)
+
+    #end for antennas
+
+    p2p = np.stack((p2p_x, p2p_y, p2p_z, p2p_total), axis=0)
+
+    peak = np.stack((peaktime, peakbin, peakamplitude), axis=0)
+
+    fluence_total= fluenceunit*fluence
+    xfluence= fluenceunit*xfluence
+    yfluence= fluenceunit*yfluence
+    zfluence= fluenceunit*zfluence
+
+    fluence= np.stack((xfluence, yfluence, zfluence , fluence_total), axis=0)
+
+
+    if(DISPLAY):
+
+      X=GetXFromAntennaInfo(CurrentAntennaInfo)
+      Y=GetYFromAntennaInfo(CurrentAntennaInfo)
+      X=X[antennamin:antennamax+1]
+      Y=Y[antennamin:antennamax+1]
+
+      if(usetrace=='efield'):
+        title="P2P Amplitude "
+        unit= "$\mu V/m$"
+      else:
+        title="P2P Amplitude"
+        unit= "$\mu V$"
+
+      #done with event 3419 of the database
+      plt.rc('font', family='serif', size=15)
+      fig1a=plt.figure(figsize=(8,6))
+      ax3a = plt.subplot(2,2,1)
+      im=ax3a.scatter(X,Y,c=p2p_total,s=15,cmap=plt.cm.jet)
+      tmp=ax3a.set(title="P2P "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3a.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1a.colorbar(im,ax=ax3a)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+
+      ax3b = plt.subplot(2,2,2)
+      im=ax3b.scatter(X,Y,c=p2p_x,s=15,cmap=plt.cm.jet)
+      tmp=ax3b.set(title="P2P X "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3b.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1a.colorbar(im,ax=ax3b)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+      ax3c = plt.subplot(2,2,3)
+      im=ax3c.scatter(X,Y,c=p2p_y*1000,s=15,cmap=plt.cm.jet)
+      tmp=ax3c.set(title="P2P Y "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3c.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1a.colorbar(im,ax=ax3c)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+      ax3d = plt.subplot(2,2,4)
+      im=ax3d.scatter(X,Y,c=p2p_z*1000,s=15,cmap=plt.cm.jet)
+      tmp=ax3d.set(title="P2P Z "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3d.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1a.colorbar(im,ax=ax3d)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+      #####################################################################################
+
+      if(usetrace=='efield'):
+        title="Fluence "
+        unit= "$meV/m^2$"
+      else:
+        title="Integrated Power"
+        unit= "$meV$"
+
+      plt.rc('font', family='serif', size=15)
+      fig1b=plt.figure(figsize=(8,6))
+      ax3a = plt.subplot(2,2,1)
+      im=ax3a.scatter(X,Y,c=fluence_total*1000,s=15,cmap=plt.cm.jet)
+      tmp=ax3a.set(title="Energy "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3a.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1b.colorbar(im,ax=ax3a)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+
+      ax3b = plt.subplot(2,2,2)
+      im=ax3b.scatter(X,Y,c=xfluence*1000,s=15,cmap=plt.cm.jet)
+      tmp=ax3b.set(title="X Energy "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3b.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1b.colorbar(im,ax=ax3b)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+      ax3c = plt.subplot(2,2,3)
+      im=ax3c.scatter(X,Y,c=yfluence*1000,s=15,cmap=plt.cm.jet)
+      tmp=ax3c.set(title="Y Energy "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3c.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1b.colorbar(im,ax=ax3c)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+      ax3d = plt.subplot(2,2,4)
+      im=ax3d.scatter(X,Y,c=zfluence*1000,s=15,cmap=plt.cm.jet)
+      tmp=ax3d.set(title="Z Energy "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3d.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1b.colorbar(im,ax=ax3d)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+
+      #######################################################################################
+
+      if(usetrace=='efield'):
+        title="Time "
+        unit= "ns"
+      else:
+        title="Time"
+        unit= "ns"
+
+
+      plt.rc('font', family='serif', size=15)
+      fig1c=plt.figure(figsize=(8,6))
+      ax3a = plt.subplot(2,2,1)
+      im=ax3a.scatter(X,Y,c=peaktime,s=15,cmap=plt.cm.jet)
+      tmp=ax3a.set(title="PeakTime "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3a.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1c.colorbar(im,ax=ax3a)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+
+      ax3b = plt.subplot(2,2,2)
+      im=ax3b.scatter(X,Y,c=peakbin*binsize,s=15,cmap=plt.cm.jet)
+      tmp=ax3b.set(title="PeakBin "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3b.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1c.colorbar(im,ax=ax3b)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+      ax3c = plt.subplot(2,2,3)
+      im=ax3c.scatter(X,Y,c=peakamplitude,s=15,cmap=plt.cm.jet)
+      tmp=ax3c.set(title="PeakAmplitude "+usetrace,xlabel='Northing [m]',ylabel='Easting [m]')
+      ax3c.set_ylabel('Easting [m]',labelpad=-7)
+      bar=fig1c.colorbar(im,ax=ax3c)
+      bar.set_label(unit, rotation=270, labelpad=17)
+
+      plt.show()
+
+    return p2p,peak,fluence
 
 
 

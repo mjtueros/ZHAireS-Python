@@ -994,6 +994,8 @@ def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
   AntennaZ=[]
   AntennaT=[]
   Read=False
+  ReadLegacy=False
+  AntennaN=0
   try:
     datafile=open(sry_file,'r')
     with open(sry_file, "r") as datafile:
@@ -1022,9 +1024,47 @@ def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
             AntennaT.append(stripedline[5])
           else:
             Read=False
+
+            #now, i need to make the AntennaID Unique, so that i can store them in the file
+            dups = {}
+
+            for i, val in enumerate(AntennaID):
+                if val not in dups:
+                    # Store index of first occurrence and occurrence value
+                    dups[val] = [i, 1]
+                else:
+                    # Special case for first occurrence
+                    if dups[val][1] == 1:
+                        AntennaID[dups[val][0]] += str(dups[val][1])
+
+                    # Increment occurrence value, index value doesn't matter anymore
+                    dups[val][1] += 1
+
+                    # Use stored occurrence value
+                    AntennaID[i] += str(dups[val][1])
+
+
             return AntennaID,AntennaX,AntennaY,AntennaZ,AntennaT
+
+        if(ReadLegacy):
+          stripedline=line.split()
+          if(len(stripedline)==5):
+            AntennaX.append(stripedline[1])
+            AntennaY.append(stripedline[2])
+            AntennaZ.append(stripedline[3])
+            AntennaT.append(stripedline[4])
+            AntennaID.append("Antenna"+str(AntennaN))
+            AntennaN=AntennaN+1
+          else:
+            ReadLegacy=False
+            return AntennaID,AntennaX,AntennaY,AntennaZ,AntennaT
+
         elif 'Antenna|      Label      |' in line:
           Read=True
+        elif 'Antenna|   X [m]' in line:
+          ReadLegacy=True
+
+
 
 
   except:
