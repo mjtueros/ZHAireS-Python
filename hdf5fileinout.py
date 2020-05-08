@@ -2,8 +2,8 @@
 from astropy.table import Table, Column
 from astropy import units as u
 import numpy as np
-#import matplotlib as mpl
-mpl.use('Agg')
+import matplotlib as mpl
+#mpl.use('Agg')
 import matplotlib.pyplot as plt
 
 
