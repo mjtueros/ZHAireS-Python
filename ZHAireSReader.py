@@ -41,6 +41,14 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     filename=EventName+".hdf5"
     RunName=filename   #for now the name of the run is just the filename
 
+    inpfile=glob.glob(InputFolder+"/*.inp")
+    if(len(idffile)!=1):
+      logging.critical("we can only get the core position from the input file, at it should be in the same directory as the sry")
+      logging.critical("defaulting to (0.0,0)")
+      inpfile[0]=None
+      CorePosition=(0.0,0.0,0.0)
+
+
     #############################################################################################################################
     # RUN INFO
     #############################################################################################################################
@@ -78,11 +86,18 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     AtmosphericModel=AiresInfo.GetAtmosphericModelFromSry(sryfile[0])
     EnergyInNeutrinos=AiresInfo.GetEnergyFractionInNeutrinosFromSry(sryfile[0])
     EnergyInNeutrinos=EnergyInNeutrinos*Energy
+
+    if(inpfile[0]!=None):
+      CorePosition=AiresInfo.GetCorePositionFromInp(inpfile[0])
+
+    print("CorePosition:",CorePosition)
+
+
     if(EventInfo):
 
         EventInfoMeta=hdf5io.CreateEventInfoMeta(RunName,EventNumber,EventInfo,ShowerSimInfo,SignalSimInfo,AntennaInfo,AntennaTraces,NLongitudinal,ELongitudinal,NlowLongitudinal,ElowLongitudinal,EdepLongitudinal,LateralDistribution,EnergyDistribution)
 
-        EventInfo=hdf5io.CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,Lat,Long,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta)
+        EventInfo=hdf5io.CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,Lat,Long,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta,CorePosition=CorePosition)
 
         hdf5io.SaveEventInfo(filename,EventInfo,EventName)
 

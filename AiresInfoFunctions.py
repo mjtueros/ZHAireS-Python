@@ -133,6 +133,35 @@ def GetEnergyFromSry(sry_file,outmode="GRAND"):
     raise
     return -1
 
+
+#output is in meters
+def GetCorePositionFromInp(inp_file,outmode="N/A"):
+  try:
+    datafile=open(inp_file,'r')
+    with open(inp_file, "r") as datafile:
+      for line in datafile:
+        if '#Core Position:' in line:
+          line = line.lstrip()
+          stripedline=line.split(':',-1)
+          stripedline=stripedline[1]
+          stripedline=stripedline.split(' ',-1)
+          x=float(stripedline[1])
+          y=float(stripedline[2])
+          z=float(stripedline[3])
+          coreposition=(x,y,z)
+          return coreposition
+      try:
+        coreposition
+      except NameError:
+        logging.error('warning core position not found, defaulting to (0,0,0)')
+        return (0.0,0.0,0.0)
+  except:
+    logging.error("GetCorePositionFromInp:file not found or invalid:"+inp_file)
+    raise
+    return -1
+
+
+
 def GetThinningRelativeEnergyFromSry(sry_file,outmode="N/A"):
   try:
     datafile=open(sry_file,'r')
@@ -921,8 +950,6 @@ def GetInjectionAltitudeFromSry(sry_file,outmode="N/A"):
     raise
     return -1
 
-
-
 def GetEnergyFractionInNeutrinosFromSry(sry_file,outmode="N/A"):
   try:
     datafile=open(sry_file,'r')
@@ -1459,8 +1486,7 @@ def DeprecatedReadAiresSry(sry_file,outmode="GRAND"):
 
 
 if __name__ == '__main__':
-    #main ReadAiresInput
+
     path = sys.argv[1]
     outmode = 'AIRES'
-    #print(ReadAiresInput(path,outmode))
     print(ReadAiresSry(path,outmode))

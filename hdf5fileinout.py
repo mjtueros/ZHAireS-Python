@@ -368,7 +368,7 @@ def CreateEventInfoMeta(RunName,EventNumber,EventInfo,ShowerSimInfo,SignalSimInf
         }
     return EventInfoMeta
 
-def CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,Latitude,Longitude,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta):
+def CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,Latitude,Longitude,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta,CorePosition=(0.0,0.0,0.0)):
 
     a1=Column(data=[EventName],name='EventName')   #EventName, states the name of the Task of the simulation, that usually dictates the file names
     b1=Column(data=["N/A"],name='EventID')    #An event might have some ID?
@@ -392,8 +392,9 @@ def CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPos
     t1=Column(data=[AtmosphericModel],name='AtmosphericModel')
     u1=Column(data=["N/A"],name='AtmosphericModelParameters')
     v1=Column(data=[EnergyInNeutrinos],name='EnergyInNeutrinos',unit=u.EeV)
+    w1=Column(data=[CorePosition],name='CorePosition')
 
-    EventInfo = Table(data=(a1,b1,c1,d1,e1,f1,g1,h1,i1,j1,k1,l1,m1,n1,o1,p1,q1,r1,s1,t1,u1,v1),meta=EventInfoMeta)
+    EventInfo = Table(data=(a1,b1,c1,d1,e1,f1,g1,h1,i1,j1,k1,l1,m1,n1,o1,p1,q1,r1,s1,t1,u1,v1,w1),meta=EventInfoMeta)
 
     return EventInfo
 
@@ -442,6 +443,9 @@ def GetEnergyFromEventInfo(EventInfo):
    #TODO: Handle errors
     return float(EventInfo["Energy"])
 
+def GetCorePositionFromEventInfo(EventInfo):
+   #TODO: Handle errors
+    return EventInfo["CorePosition"]
 
 #######################################################################################################################################################################
 # ShowerSim Creators
