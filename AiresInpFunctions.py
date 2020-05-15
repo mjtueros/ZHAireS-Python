@@ -6,12 +6,12 @@ import random
 #from mpl_toolkits.mplot3d import Axes3D #
 #other, nore elegant solution:
 import matplotlib
-matplotlib.use('Agg')
+#matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
 #set the time window as a function of xmaxdistance, in meters
-def CreateSmartTimeWindowInp(xmaxdistance,OutputFile):
+def CreateSmartTimeWindowInp(xmaxdistance,OutputFile,AdditionalTmin=0,AdditionalTmax=200):
 
     file= open(OutputFile, "a")
 
@@ -36,12 +36,12 @@ def CreateSmartTimeWindowInp(xmaxdistance,OutputFile):
       else:
         return 2500-69*x
 
-    Tmin=LowTimeLimit(xmaxdistance/1000.0, params[0], params[1], params[2], params[3],params[4],params[5])
-    Tmax=200+HighTimeLimit(xmaxdistance/1000.0, params[0], params[1], params[2], params[3],params[4],params[5])
+    Tmin=AdditionalTmin+LowTimeLimit(xmaxdistance/1000.0, params[0], params[1], params[2], params[3],params[4],params[5])
+    Tmax=AdditionalTmax+HighTimeLimit(xmaxdistance/1000.0, params[0], params[1], params[2], params[3],params[4],params[5])
 
     file.write('######################################################################################\n')
     file.write('# Antenna TimeWindow created with CreateSmartTimeWindowInp v0.1                      #\n')
-    file.write('# Xmax Distance:{0:.2f} km\n'.format(xmaxdistance/1000))
+    file.write('# Xmax to Antenna Distance:{0:.2f} km\n'.format(xmaxdistance/1000))
     file.write('######################################################################################\n')
     file.write('AntennaTimeMin {0:0.1f} ns\n'.format(Tmin))
     file.write('AntennaTimeMax {0:0.1f} ns\n'.format(Tmax))
