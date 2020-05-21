@@ -6,7 +6,7 @@ import random
 #from mpl_toolkits.mplot3d import Axes3D #
 #other, nore elegant solution:
 import matplotlib
-#matplotlib.use('Agg')
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
@@ -100,7 +100,7 @@ def CreateAiresAntennaListInp(AntennaPositions,OutputFile,AntennaNames=None,Ante
 # The index of refraction model will break if altitude is negative. So be carefull if you are going for inclined planes. There is a way to keep the pattern contained in the slope
 # see the code for hints on how to do this
 
-def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000.0, cone_ang=2.0, nant=20, az_B=0.0, zen_B=147.4, outputfile="TestInput.inp", outmode="a", RandomFraction = 0, stepmode="linear", projection="Geometric"):
+def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000.0, cone_ang=2.0, nant=20, az_B=0.0, zen_B=147.4, outputfile="TestInput.inp", outmode="a", RandomFraction = 0, stepmode="linear", projection="Geometric",vspread=0):
 
   #==============================================================================
   #Original version from A. Zilles, extensivly modified by M. Tueros in Oct 2019
@@ -121,7 +121,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
   #                                            "quadratic" will go from 0 (not included) to cone_ang (included) in cuadratic steps, with an offset
   #projection: 2 projection modes are implemented: "geometric" wich projects the starshape paralel to the shower axis. This gives an elipse centered on 0,0
   #                                                "conical" which projects the starshape through a cone with given vertex. This gives an elipse with 0,0 in the focus. This projection conserves the angle of the antenna with the shower direction
-
+  #vspread: random (uniformly distributed) spread between (-vspread and + vspread) in Z coordinate of the random check antennas, to test the effect of topography
 
   # Here (x,y,z) = (Northing,Westing, Up). Alt ref at sea level.
   # Use Zhaires (theta, phi) convention: defined wrt direction of origin
@@ -269,6 +269,13 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
       u=(0.0-XmaxPosition[2])/(xyz0[2]-XmaxPosition[2])
       xyz3[nant*8+i]=(1-u)*XmaxPosition+u*xyz0
 
+      if(vspread>0):
+        spread=random.uniform(-vspread,vspread)
+        xyz[nant*8+i,2]+=spread
+        xyz3[nant*8+i,2]+=spread
+
+
+
     #GetTmin AND Tmax
 
     params=[-7.58890582e+01,  6.96201680e-01, -9.52616492e+02,  2.28302828e-02, 5.16280889e-01, -2.02393863e-03]
@@ -328,12 +335,13 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
         file.write('####################################################################################\n\n')
         if(nrandom>0):
           file.write('#{0:d} Crosscheck Antennas  ########################################################\n\n'.format(nrandom))
+          if(vspread>0):
+            file.write('# VerticalSpread: {0:.2f} m\n'.format(vspread))
         for i in np.arange(nrandom):
           if(projection=="geometric" or projection=="Geometric"):
             file.write("AddAntenna CrossCheckA{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(nant*8+i),xyz[nant*8+i,0],xyz[nant*8+i,1],xyz[nant*8+i,2]))
           elif(projection=="conical" or projection=="Conical"):
             file.write("AddAntenna CrossCheckA{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(nant*8+i),xyz3[nant*8+i,0],xyz3[nant*8+i,1],xyz3[nant*8+i,2]))
-
         file.write('####################################################################################\n\n')
 
         file.close()
@@ -344,19 +352,19 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
         if(projection=="geometric" or projection=="Geometric"):
           xyz2[i]=GetUVW(xyz[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
         elif(projection=="conical" or projection=="Conical"):
-         print("Antenna",i)
+         #print("Antenna",i)
          planeNormal=a
-         print("planeNormal",planeNormal)
+         #print("planeNormal",planeNormal)
          planePoint=np.array([0,0,0]) #the starshape is always on the ground when generated for ZHAireS
-         print("planePoint",planePoint)
+         #print("planePoint",planePoint)
          rayDirection=xyz3[i]-XmaxPosition
-         print("rayDirection",rayDirection)
+         #print("rayDirection",rayDirection)
          rayPoint=XmaxPosition
-         print("rayPoint",rayPoint)
+         #print("rayPoint",rayPoint)
          xyz2[i]=LinePlaneCollision(planeNormal, planePoint, rayDirection, rayPoint, epsilon=1e-6)
-         print("collision",xyz2[i])
+         #print("collision",xyz2[i])
          xyz2[i]=GetUVW(xyz2[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
-         print("UVW",xyz2[i])
+         #print("UVW",xyz2[i])
 
       shower=np.zeros([200,3])
       mount_u=np.zeros([200,3])
