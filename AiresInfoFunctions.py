@@ -133,6 +133,35 @@ def GetEnergyFromSry(sry_file,outmode="GRAND"):
     raise
     return -1
 
+
+#output is in meters
+def GetCorePositionFromInp(inp_file,outmode="N/A"):
+  try:
+    datafile=open(inp_file,'r')
+    with open(inp_file, "r") as datafile:
+      for line in datafile:
+        if '#Core Position:' in line:
+          line = line.lstrip()
+          stripedline=line.split(':',-1)
+          stripedline=stripedline[1]
+          stripedline=stripedline.split(' ',-1)
+          x=float(stripedline[1])
+          y=float(stripedline[2])
+          z=float(stripedline[3])
+          coreposition=(x,y,z)
+          return coreposition
+      try:
+        coreposition
+      except NameError:
+        logging.error('warning core position not found, defaulting to (0,0,0)')
+        return (0.0,0.0,0.0)
+  except:
+    logging.error("GetCorePositionFromInp:file not found or invalid:"+inp_file)
+    raise
+    return -1
+
+
+
 def GetThinningRelativeEnergyFromSry(sry_file,outmode="N/A"):
   try:
     datafile=open(sry_file,'r')
@@ -921,8 +950,6 @@ def GetInjectionAltitudeFromSry(sry_file,outmode="N/A"):
     raise
     return -1
 
-
-
 def GetEnergyFractionInNeutrinosFromSry(sry_file,outmode="N/A"):
   try:
     datafile=open(sry_file,'r')
@@ -982,7 +1009,7 @@ def get_antenna_t0(xant,yant,hant, azimuthdeg, zenithdeg):
 
     rproj=Rant*np.cos(angle)
 
-    dtna=-(hant/coszenith + (rproj-hant*tanzenith)*sinzenith)/cspeed
+    dtna=(hant/coszenith + (rproj-hant*tanzenith)*sinzenith)/cspeed
 
     return dtna*1.0e9
 
@@ -994,6 +1021,8 @@ def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
   AntennaZ=[]
   AntennaT=[]
   Read=False
+  ReadLegacy=False
+  AntennaN=0
   try:
     datafile=open(sry_file,'r')
     with open(sry_file, "r") as datafile:
@@ -1022,9 +1051,47 @@ def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
             AntennaT.append(stripedline[5])
           else:
             Read=False
+
+            #now, i need to make the AntennaID Unique, so that i can store them in the file
+            dups = {}
+
+            for i, val in enumerate(AntennaID):
+                if val not in dups:
+                    # Store index of first occurrence and occurrence value
+                    dups[val] = [i, 1]
+                else:
+                    # Special case for first occurrence
+                    if dups[val][1] == 1:
+                        AntennaID[dups[val][0]] += str(dups[val][1])
+
+                    # Increment occurrence value, index value doesn't matter anymore
+                    dups[val][1] += 1
+
+                    # Use stored occurrence value
+                    AntennaID[i] += str(dups[val][1])
+
+
             return AntennaID,AntennaX,AntennaY,AntennaZ,AntennaT
+
+        if(ReadLegacy):
+          stripedline=line.split()
+          if(len(stripedline)==5):
+            AntennaX.append(stripedline[1])
+            AntennaY.append(stripedline[2])
+            AntennaZ.append(stripedline[3])
+            AntennaT.append(stripedline[4])
+            AntennaID.append("Antenna"+str(AntennaN))
+            AntennaN=AntennaN+1
+          else:
+            ReadLegacy=False
+            return AntennaID,AntennaX,AntennaY,AntennaZ,AntennaT
+
         elif 'Antenna|      Label      |' in line:
           Read=True
+        elif 'Antenna|   X [m]' in line:
+          ReadLegacy=True
+
+
 
 
   except:
@@ -1419,8 +1486,7 @@ def DeprecatedReadAiresSry(sry_file,outmode="GRAND"):
 
 
 if __name__ == '__main__':
-    #main ReadAiresInput
+
     path = sys.argv[1]
     outmode = 'AIRES'
-    #print(ReadAiresInput(path,outmode))
     print(ReadAiresSry(path,outmode))
