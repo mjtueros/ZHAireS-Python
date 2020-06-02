@@ -41,6 +41,14 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     filename=EventName+".hdf5"
     RunName=filename   #for now the name of the run is just the filename
 
+    inpfile=glob.glob(InputFolder+"/*.inp")
+    if(len(idffile)!=1):
+      logging.critical("we can only get the core position from the input file, at it should be in the same directory as the sry")
+      logging.critical("defaulting to (0.0,0)")
+      inpfile[0]=None
+      CorePosition=(0.0,0.0,0.0)
+
+
     #############################################################################################################################
     # RUN INFO
     #############################################################################################################################
@@ -57,6 +65,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     SlantXmax=AiresInfo.GetSlantXmaxFromSry(sryfile[0])
     HadronicModel=AiresInfo.GetHadronicModelFromSry(sryfile[0])
     InjectionAltitude=AiresInfo.GetInjectionAltitudeFromSry(sryfile[0])
+    Lat,Long=AiresInfo.GetLatLongFromSry(sryfile[0])
 
     if(RunInfo):
 
@@ -77,11 +86,18 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     AtmosphericModel=AiresInfo.GetAtmosphericModelFromSry(sryfile[0])
     EnergyInNeutrinos=AiresInfo.GetEnergyFractionInNeutrinosFromSry(sryfile[0])
     EnergyInNeutrinos=EnergyInNeutrinos*Energy
+
+    if(inpfile[0]!=None):
+      CorePosition=AiresInfo.GetCorePositionFromInp(inpfile[0])
+
+    print("CorePosition:",CorePosition)
+
+
     if(EventInfo):
 
         EventInfoMeta=hdf5io.CreateEventInfoMeta(RunName,EventNumber,EventInfo,ShowerSimInfo,SignalSimInfo,AntennaInfo,AntennaTraces,NLongitudinal,ELongitudinal,NlowLongitudinal,ElowLongitudinal,EdepLongitudinal,LateralDistribution,EnergyDistribution)
 
-        EventInfo=hdf5io.CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta)
+        EventInfo=hdf5io.CreateEventInfo(EventName,Primary,Energy,Zenith,Azimuth,XmaxDistance,XmaxPosition,XmaxAltitude,SlantXmax,InjectionAltitude,GroundAltitude,Site,Date,Lat,Long,FieldIntensity,FieldInclination,FieldDeclination,AtmosphericModel,EnergyInNeutrinos,EventInfoMeta,CorePosition=CorePosition)
 
         hdf5io.SaveEventInfo(filename,EventInfo,EventName)
 
@@ -117,7 +133,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     if(SignalSimInfo):
         #Getting all the information i need for SignalSimInfo
         FieldSimulator=AiresInfo.GetZHAireSVersionFromSry(sryfile[0])
-        FieldSimulator="ZHAireS "+FieldSimulator
+        FieldSimulator="ZHAireS "+str(FieldSimulator)
         RefractionIndexModel="Exponential"
         RefractionIndexParameters=[1.0003250,-0.1218]
         TimeBinSize=AiresInfo.GetTimeBinFromSry(sryfile[0])
@@ -135,40 +151,52 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     #################################################################################################################################
     if(AntennaInfo):
 
+        #Getting info from aires sry instead (much tidier)
+
+        IDs,antx,anty,antz,antt=AiresInfo.GetAntennaInfoFromSry(sryfile[0])
+
+        antx=np.array(antx, dtype=np.float32)
+        anty=np.array(anty, dtype=np.float32)
+        antz=np.array(antz, dtype=np.float32)
+        antt=np.array(antt, dtype=np.float32)
+        #ZHAireS does not support slopes in the antennas, but you can put them here after you computed the antenna response
+        slopeA=np.zeros(np.shape(antt))
+        slopeB=np.zeros(np.shape(antt))
+
         #Getting the information I need
-        antposfile="N/A"
-        if(antposfile=="N/A"):
-            antposfile=glob.glob(inputfolder+"/antpos.dat")
+        #antposfile="N/A"
+        #if(antposfile=="N/A"):
+        #    antposfile=glob.glob(inputfolder+"/antpos.dat")
 
-        if(len(antposfile)==1 and os.path.isfile(antposfile[0])):
-            positions = np.genfromtxt(inputfolder+"/antpos.dat") #this is not opening correctly the antena ID
-            #workarround
-            token = open(antposfile[0],'r')
-            linestoken=token.readlines()
-            tokens_column_number = 1
-            IDs=[]
-            slopeA=[]
-            slopeB=[]
-            for x in linestoken:
-                IDs.append(x.split()[tokens_column_number])
-                slopeA.append(0.0)
-                slopeB.append(0.0)
-            token.close()
-            antx=positions.T[2]
-            anty=positions.T[3]
-            antz=positions.T[4]
-
-        elif(len(antposfile)>1):
-            logging.critical("multiple antpos.dat files " + str(len(antoposfile)) + " found in " +inputfolder + ". ZHAireSHDF5FileWriter cannot continue")
-            return -1
-        else:
-            logging.critical("antpos.dat file not found in " +inputfolder + ". ZHAireSHDF5FileWriter cannot continue")
-            return -1
+        #if(len(antposfile)==1 and os.path.isfile(antposfile[0])):
+        #    positions = np.genfromtxt(inputfolder+"/antpos.dat") #this is not opening correctly the antena ID
+        #    #workarround
+        #    token = open(antposfile[0],'r')
+        #    linestoken=token.readlines()
+        #    tokens_column_number = 1
+        #    IDs=[]
+        #    slopeA=[]
+        #    slopeB=[]
+        #    for x in linestoken:
+        #        IDs.append(x.split()[tokens_column_number])
+        #        slopeA.append(0.0)
+        #        slopeB.append(0.0)
+        #    token.close()
+        #    antx=positions.T[2]
+        #    anty=positions.T[3]
+        #     antz=positions.T[4]
+        #
+        #elif(len(antposfile)>1):
+        #    logging.critical("multiple antpos.dat files " + str(len(antoposfile)) + " found in " +inputfolder + ". ZHAireSHDF5FileWriter cannot continue")
+        #    return -1
+        #else:
+        #    logging.critical("antpos.dat file not found in " +inputfolder + ". ZHAireSHDF5FileWriter cannot continue")
+        #    return -1
 
 
         AntennaInfoMeta= hdf5io.CreatAntennaInfoMeta(RunName,EventName)
 
-        AntennaInfo=hdf5io.CreateAntennaInfo(IDs, antx, anty, antz, slopeA, slopeB, AntennaInfoMeta)
+        AntennaInfo=hdf5io.CreateAntennaInfo(IDs, antx, anty, antz, antt,slopeA, slopeB, AntennaInfoMeta)
 
         hdf5io.SaveAntennaInfo(filename,AntennaInfo,EventName)
 
@@ -490,10 +518,10 @@ if __name__ == '__main__':
 
   elif(mode=="minimal"):
 
-      ZHAiresReader(inputfolder, SignalSimInfo=False, AntennaInfo=False, AntennaTraces=False, NLongitudinal=False, ELongitudinal=False, NlowLongitudinal=False, ElowLongitudinal=False, EdepLongitudinal=False, LateralDistribution=False, EnergyDistribution=False)
+      ZHAiresReader(inputfolder, SignalSimInfo=True, AntennaInfo=True, AntennaTraces=True, NLongitudinal=False, ELongitudinal=False, NlowLongitudinal=False, ElowLongitudinal=False, EdepLongitudinal=False, LateralDistribution=False, EnergyDistribution=False)
 
 
   else:
 
-      printf("please enter one of these modes: standard, full or minimal")
+      print("please enter one of these modes: standard, full or minimal")
 

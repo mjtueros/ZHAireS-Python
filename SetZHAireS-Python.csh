@@ -7,4 +7,5 @@ setenv AIRESBINDIR /home/mjtueros/aires/bin
 setenv RADIOSIMUS /home/mjtueros/GRAND/GP300/azillesnana/radio-simus
 #directory wheere ZHAireS-Python is located
 setenv ZHAIRESPYTHON /home/mjtueros/AiresRepository/Dropbox/GitAiresPython/ZHAireS-Python
-
+#directory of the ZHAireSRunner
+setenv ZHAIRESRUNNER /home/mjtueros/AiresRepository/Dropbox/ZHAireSRunner

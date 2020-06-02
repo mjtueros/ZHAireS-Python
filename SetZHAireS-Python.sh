@@ -7,4 +7,7 @@ export AIRESBINDIR=/home/mjtueros/aires/bin
 export RADIOSIMUS=/home/mjtueros/GRAND/GP300/azillesnana/radio-simus
 #directory wheere ZHAireS-Python is located
 export ZHAIRESPYTHON=/home/mjtueros/AiresRepository/Dropbox/GitAiresPython/ZHAireS-Python
+#directory of the ZHAireSRunner
+export ZHAIRESRUNNER=/home/mjtueros/AiresRepository/Dropbox/ZHAireSRunner
+
 

@@ -16,7 +16,7 @@ def RemoveTableFromHDF5(InputFilename,OutputFilename,TableName):
 
     print("Coping everything exept "+str(TableName)+" from " + str(InputFilename) + " to " + str(OutputFilename))
     fs = h5py.File(InputFilename, 'r')
-    fd = h5py.File(OutputFilename, 'w')
+    fd = h5py.File(OutputFilename, 'a')
 
     fs.visititems(put_datasets_on_namelist)
 

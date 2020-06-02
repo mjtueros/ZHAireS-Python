@@ -82,6 +82,12 @@ def ComputeVoltageOnHDF5(inputfilename,EventNumber=0,FreqMin=100.e6,FreqMax=180.
 
     #end for
 
+    if inputfilename!=outfilename:
+      import RemoveTableFromHDF5 as rt
+      #this should copy allt the contents from the input file, inthe outputfile, exept the traces
+      logging.debug("Copying tables from field file")
+      rt.RemoveTableFromHDF5(inputfilename,outfilename,"AntennaTraces")
+
   else:
    logging.critical("input file " + inputfilename + " does not exist or is not a directory. ComputeVoltageOnSHDF5 cannot continue")
 
@@ -89,9 +95,18 @@ def ComputeVoltageOnHDF5(inputfilename,EventNumber=0,FreqMin=100.e6,FreqMax=180.
 if __name__ == '__main__':
 
   if ( len(sys.argv)<2 ):
-    print("usage")
+    print("usage ComputVoltagaOnHDF5 inputfile (outputfile)")
+    print("if outputfile is not specified, voltage is writen on the same file")
 
-  else:
+  if ( len(sys.argv)==2 ):
    inputfile=sys.argv[1]
    ComputeVoltageOnHDF5(inputfile)
+
+  if ( len(sys.argv)==3 ):
+   inputfile=sys.argv[1]
+   outputfile=sys.argv[2]
+   ComputeVoltageOnHDF5(inputfile,outfilename=outputfile)
+
+
+
 
