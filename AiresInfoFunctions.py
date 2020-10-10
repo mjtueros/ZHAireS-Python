@@ -460,6 +460,31 @@ def GetKmXmaxFromSry(sry_file,outmode="N/A"): #To do. Handle when Xmax is not fo
     raise
     return -1
 
+
+def GetExpectedKmXmaxFromSry(sry_file,outmode="N/A"): #To do. Handle when Xmax is not found, becouse the fit didnt converge, or becouse this is not ZHAireS, or its latest version
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      for line in datafile:
+        if 'Exp Distance To Xmax' in line:
+          line = line.lstrip()
+          stripedline=line.split()
+          kmxmax = float(stripedline[len(stripedline)-2])
+          logging.debug("Found Expected Xmax distance " + str(kmxmax) ) #debug level 1
+          return kmxmax
+      try:
+        kmxmax
+      except NameError:
+        logging.info('warning expected distance to xmax not found')
+        return -1
+  except:
+    logging.error("GetExpectedKmXmaxFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1
+
+
+
+
 def GetTaskNameFromSry(sry_file,outmode="N/A"):
   try:
     datafile=open(sry_file,'r')
@@ -1217,6 +1242,7 @@ def GetLateralTable(Path,TableNumber,Density=True,Precision="Double"):
 
 
 #this gets the effective refraction index from poitn R0 to xant,yant,groundz (default to the core position), all in meters, but kr in 1/km
+#ns is the REFRACIVITY AR SEA LEVEL, kr is the scale height in km.
 import numpy as np
 def GetEffectiveRefractionIndex(x0,y0,z0,ns,kr,groundz,xant=0,yant=0,stepsize = 20000):
 
@@ -1226,6 +1252,7 @@ def GetEffectiveRefractionIndex(x0,y0,z0,ns,kr,groundz,xant=0,yant=0,stepsize = 
 
         rh0 = ns*np.exp(kr*h0) #refractivity at emission
         n_h0=1.E0+1.E-6*rh0 #n at emission
+        #print("n_h0",n_h0,ns,kr,x0,y0,z0,h0,rh0)
 
         hd=(groundz)/1.E3 #detector altitude
 
