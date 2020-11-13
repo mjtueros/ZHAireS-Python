@@ -214,8 +214,8 @@ def CreateExampleSkeleton(OutputFile="TestInput.inp", OutMode="a"):
   file.write('MaxCpuTimePerRun 120 min\n')
   file.write('\n#We make the Antenna time window tight to reduce output. Be sure to tune it for your needs.\n')
   file.write('(this will produce 513 time bins, of wich 512 will be in the file, to have a power of 2)\n')
-  file.write('AntennaTimeMin -66 ns\n')
-  file.write('AntennaTimeMax 960 ns\n')
+  #file.write('AntennaTimeMin -66 ns\n')
+  #file.write('AntennaTimeMax 960 ns\n')
   file.write('TimeDomainBin 0.5 ns\n')
   file.write('\n#Speed up sims for radio\n')
   file.write('#increase the energy threshold up to 3MeV (specially if you are not interested in the ground particles)..saves up to 50% time\n')
@@ -565,11 +565,11 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
 
 
         for i in np.arange(nant*8):
-          if((projection=="geometric" or projection=="Geometric") and xyz[i,2]>0):
+          if((projection=="geometric" or projection=="Geometric" or projection=="Geometrical" or projection=="geometrical")):
             file.write("AddAntenna A{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(i),xyz[i,0],xyz[i,1],xyz[i,2]))
-          elif((projection=="conical" or projection=="Conical") and xyz3[i,2]>0):
+          elif((projection=="conical" or projection=="Conical")):
             file.write("AddAntenna A{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(i),xyz3[i,0],xyz3[i,1],xyz3[i,2]))
-          elif((type(projection)==type(1) or type(projection)==type(1.1) ) and xyz4[i,2]>0): #if it is an int or a float
+          elif((type(projection)==type(1) or type(projection)==type(1.1)) and xyz4[nant*8+i,2]>-0.1): #if it is an int or a float
             file.write("AddAntenna A{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(i),xyz4[i,0],xyz4[i,1],xyz4[i,2]))
 
         file.write('####################################################################################\n\n')
@@ -578,11 +578,11 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
           if(vspread>0):
             file.write('# VerticalSpread: {0:.2f} m\n'.format(vspread))
         for i in np.arange(nrandom):
-          if((projection=="geometric" or projection=="Geometric") and xyz[nant*8+i,2]>0):
+          if((projection=="geometric" or projection=="Geometric" or projection=="Geometrical" or projection=="geometrical")):
             file.write("AddAntenna CrossCheckA{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(nant*8+i),xyz[nant*8+i,0],xyz[nant*8+i,1],xyz[nant*8+i,2]))
-          elif((projection=="conical" or projection=="Conical") and xyz3[nant*8+i,2]>0):
+          elif((projection=="conical" or projection=="Conical")):
             file.write("AddAntenna CrossCheckA{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(nant*8+i),xyz3[nant*8+i,0],xyz3[nant*8+i,1],xyz3[nant*8+i,2]))
-          elif((type(projection)==type(1) or type(projection)==type(1.1)) and xyz4[nant*8+i,2]>0): #if it is an int or a float
+          elif((type(projection)==type(1) or type(projection)==type(1.1)) and xyz4[nant*8+i,2]>-0.1): #if it is an int or a float
             file.write("AddAntenna A{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(nant*8+i),xyz4[nant*8+i,0],xyz4[nant*8+i,1],xyz4[nant*8+i,2]))
         file.write('####################################################################################\n\n')
 
@@ -593,7 +593,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
     if DISPLAY:
 
       for i in np.arange(nant*8):
-        if(projection=="geometric" or projection=="Geometric"):
+        if(projection=="geometric" or projection=="Geometric" or projection=="Geometrical" or projection=="geometrical"):
           xyz2[i]=GetUVW(xyz[i], r0[0], r0[1], r0[2], zen_rad, az_rad, az_B, zen_B)# as used later to fo in vxB
         elif(projection=="conical" or projection=="Conical"):
          #print("Antenna",i)
@@ -627,7 +627,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
       from mpl_toolkits.mplot3d import Axes3D
       ax = fig1.add_subplot(111, projection='3d')
       ax.scatter(xyz1[:,0],xyz1[:,1],xyz1[:,2],label="(vxB, vxvxB) starshape")
-      if(projection=="geometric" or projection=="Geometric"):
+      if(projection=="geometric" or projection=="Geometric" or projection=="Geometrical" or projection=="geometrical"):
         ax.scatter(xyz[:,0],xyz[:,1],xyz[:,2],label="geometrical projection")
       elif(projection=="conical" or projection=="Conical"):
         ax.scatter(xyz3[:,0],xyz3[:,1],xyz3[:,2],label="conical projection")
