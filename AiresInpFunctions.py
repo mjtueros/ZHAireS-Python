@@ -2,11 +2,10 @@ import os
 import sys
 import numpy as np
 import random
-#import matplotlib.pyplot as plt #in lyon you dont need to plot (and it will crash cos it cannot open the display
-#from mpl_toolkits.mplot3d import Axes3D #
-#other, nore elegant solution:
+#in lyon you dont need to plot (and it will crash cos it cannot open the display). This is solved using Agg
 import matplotlib
-#matplotlib.use('Agg')
+if cca in os.uname()[1]:
+  matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 
