@@ -564,9 +564,17 @@ def GetTimeWindowMax(SignalSimInfo):
    #TODO: Handle errors
     return float(SignalSimInfo["TimeWindowMax"])
 
+def GetFieldSimulator(SignalSimInfo):
+   #TODO: Handle errors
+    return SignalSimInfo["FieldSimulator"]
+
+def GetRefractionIndexModel(SignalSimInfo):
+   #TODO: Handle errors
+    return SignalSimInfo["RefractionIndexModel"].data[0]
+
 def GetRefractionIndexModelParameters(SignalSimInfo):
    #TODO: Handle errors
-    return SignalSimInfo["RefractionIndexModelParameters"]
+    return SignalSimInfo["RefractionIndexModelParameters"].data[0]
 
 ####################################################################################################################################################################################
 #AntennaInfo Creators
@@ -1873,15 +1881,41 @@ def get_crosscorrelation_hdf5(InputFilename,InterpolatedFilename, usetrace="efie
         trace=GetAntennaEfield(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
         interpolatedtrace=GetAntennaEfield(InterpolatedFilename,InterpolatedEventName,InterpolatedAntennaID,OutputFormat="numpy")
         if(np.shape(trace) != np.shape(interpolatedtrace)):
-          print(np.shape(trace), np.shape(interpolatedtrace))
-          trace=trace[0:-1,:]
-
+          print("trace shape and interpolated shape are not equal",np.shape(trace), np.shape(interpolatedtrace))
+          if(np.shape(trace)[0] < np.shape(interpolatedtrace)[0]):
+             interpolatedtrace=interpolatedtrace[0:np.shape(trace)[0],:]
+          else:
+             trace=interpolatedtrace[0:np.shape(interpolatedtrace)[0],:]
+          if(np.shape(trace) != np.shape(interpolatedtrace)):
+            print("this didnt fix it")
+          else:
+            print("this fixed it")
       elif(usetrace=='voltage'):
         trace=GetAntennaVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
         interpolatedtrace=GetAntennaVoltage(InterpolatedFilename,InterpolatedEventName,InterpolatedAntennaID,OutputFormat="numpy")
+        if(np.shape(trace) != np.shape(interpolatedtrace)):
+          print("trace shape and interpolated shape are not equal",np.shape(trace), np.shape(interpolatedtrace))
+          if(np.shape(trace)[0] < np.shape(interpolatedtrace)[0]):
+             interpolatedtrace=interpolatedtrace[0:np.shape(trace)[0],:]
+          else:
+             trace=interpolatedtrace[0:np.shape(interpolatedtrace)[0],:]
+          if(np.shape(trace) != np.shape(interpolatedtrace)):
+            print("this didnt fix it")
+          else:
+            print("this fixed it")
       elif(usetrace=='filteredvoltage'):
         trace=GetAntennaFilteredVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
         interpolatedtrace=GetAntennaFilteredVoltage(InterpolatedFilename,InterpolatedEventName,InterpolatedAntennaID,OutputFormat="numpy")
+        if(np.shape(trace) != np.shape(interpolatedtrace)):
+          print("trace shape and interpolated shape are not equal",np.shape(trace), np.shape(interpolatedtrace))
+          if(np.shape(trace)[0] < np.shape(interpolatedtrace)[0]):
+             interpolatedtrace=interpolatedtrace[0:np.shape(trace)[0],:]
+          else:
+             trace=interpolatedtrace[0:np.shape(interpolatedtrace)[0],:]
+          if(np.shape(trace) != np.shape(interpolatedtrace)):
+            print("this didnt fix it")
+          else:
+            print("this fixed it")
       else:
         print('You must specify either efield, voltage or filteredvoltage, bailing out')
         return -1,-1,-1
@@ -1889,6 +1923,7 @@ def get_crosscorrelation_hdf5(InputFilename,InterpolatedFilename, usetrace="efie
       #Xcomponent
       tracex=trace[:,1]
       interpolatedx=interpolatedtrace[:,1]
+
       difference=tracex-interpolatedx
       meanx=tracex.mean()
       interpolatedmeanx=interpolatedx.mean()
