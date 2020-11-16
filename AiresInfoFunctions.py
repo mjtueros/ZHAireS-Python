@@ -399,6 +399,20 @@ def GetPrimaryFromSry(sry_file,outmode="N/A"):
             primarytype = "unknown"
           primarytype=primarytype.replace('\n','')
           #logging.debug('Found Primary ' + primarytype) #debug level 1
+
+          if(outmode=="GRAND"):
+           #convert to GRAND coding. PDG?
+            if primarytype=="Proton":
+              primarytype=2212
+            if primarytype=="Neutron":
+              primarytype=2112
+            if primarytype=="Pi0":
+              primarytype=111
+            if primarytype=="Pi+":
+              primarytype=211
+            if primarytype=="Pi-":
+              primarytype=-211
+
           return primarytype
       try:
         primarytype
@@ -459,6 +473,31 @@ def GetKmXmaxFromSry(sry_file,outmode="N/A"): #To do. Handle when Xmax is not fo
     logging.error("GetKmXmaxFromSry:file not found or invalid:"+sry_file)
     raise
     return -1
+
+
+def GetExpectedKmXmaxFromSry(sry_file,outmode="N/A"): #To do. Handle when Xmax is not found, becouse the fit didnt converge, or becouse this is not ZHAireS, or its latest version
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      for line in datafile:
+        if 'Exp Distance To Xmax' in line:
+          line = line.lstrip()
+          stripedline=line.split()
+          kmxmax = float(stripedline[len(stripedline)-2])
+          logging.debug("Found Expected Xmax distance " + str(kmxmax) ) #debug level 1
+          return kmxmax
+      try:
+        kmxmax
+      except NameError:
+        logging.info('warning expected distance to xmax not found')
+        return -1
+  except:
+    logging.error("GetExpectedKmXmaxFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1
+
+
+
 
 def GetTaskNameFromSry(sry_file,outmode="N/A"):
   try:
@@ -1113,24 +1152,52 @@ def GetLongitudinalTable(Path,TableNumber,Slant=True,Precision="Double"):
       return -1
 
     if(len(idffile)==1 and len(tablefile)==0):
-      logging.info("could not find the table, trying to guess it from the idf")
+      logging.info("could not find the table, trying to get it from the idf")
       base=os.path.basename(idffile[0])
       taskname=os.path.splitext(base)[0]
 
-      if(Slant==True):
-        cmd=AiresPath+"/AiresExport -O a "+Path+"/"+taskname+" "+str(TableNumber)
-      elif(Slant==False):
-        cmd=AiresPath+"/AiresExport "+Path+"/"+taskname+" "+str(TableNumber)
+      if(len(Path)+len(taskname)<60 and len(taskname)<60):
+        if(Slant==True):
+            cmd=AiresPath+"/AiresExport -O a "+Path+"/"+taskname+" "+str(TableNumber)
+        elif(Slant==False):
+            cmd=AiresPath+"/AiresExport "+Path+"/"+taskname+" "+str(TableNumber)
+        else:
+            logging.error("unrecognized Slant value, please state either True/False")
+            return -1
+
+        os.system(cmd)
+        tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
+
+        if(len(tablefile)==1):
+            logging.debug("Table exported successfully")
+            deletefile=True
+
+      elif(len(taskname)<60):
+        logging.debug("idf path+name is too long, need to copy the idf here")
+        cmd="cp "+idffile[0]+" ."
+        os.system(cmd)
+
+        if(Slant==True):
+            cmd=AiresPath+"/AiresExport -O a "+taskname+" "+str(TableNumber)
+        elif(Slant==False):
+            cmd=AiresPath+"/AiresExport "+taskname+" "+str(TableNumber)
+        else:
+            logging.error("unrecognized Slant value, please state either True/False")
+            return -1
+
+        os.system(cmd)
+        tablefile=glob.glob("*.t"+str(TableNumber))
+        logging.debug(tablefile)
+
+        if(len(tablefile)==1):#this means we are not wo
+            logging.debug("Table exported successfully")
+            deletefile=True
+            cmd="rm "+taskname+".idf"
+            os.system(cmd)
+            cmd="rm "+taskname+".lgf"
+            os.system(cmd)
       else:
-        logging.error("unrecognized Slant value, please state either True/False")
-        return -1
-
-      os.system(cmd)
-      tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
-
-      if(len(tablefile)==1):
-        logging.debug("Table exported successfully")
-        deletefile=True
+       logging.debug("task name is to long, AIRES does not support that!")
 
     if(len(tablefile)==1):
       logging.debug("reading file")
@@ -1165,31 +1232,60 @@ def GetLateralTable(Path,TableNumber,Density=True,Precision="Double"):
     tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
 
     if(len(tablefile)==0 and len(idffile)==0):
-      logging.error("The requested table was not found, and the idf file is not present. Cannot get the table")
+      logging.error("LDF.The requested table was not found, and the idf file is not present. Cannot get the table")
       return -1
 
     if(len(idffile)==1 and len(tablefile)==0):
-      logging.info("could not find the table, trying to guess it from the idf")
+      logging.info("LDF.could not find the table, trying to guess it from the idf")
       base=os.path.basename(idffile[0])
       taskname=os.path.splitext(base)[0]
 
-      if(Density==True):
-        cmd=AiresPath+"/AiresExport -O dX "+Path+"/"+taskname+" "+str(TableNumber)
-      elif(Density==False):
-        cmd=AiresPath+"/AiresExport -O X "+Path+"/"+taskname+" "+str(TableNumber)
+      if(len(Path)+len(taskname)<60 and len(taskname)<60):
+
+          if(Density==True):
+            cmd=AiresPath+"/AiresExport -O dX "+Path+"/"+taskname+" "+str(TableNumber)
+          elif(Density==False):
+            cmd=AiresPath+"/AiresExport -O X "+Path+"/"+taskname+" "+str(TableNumber)
+          else:
+            logging.error("LDF.unrecognized Density value, please state either True/False")
+            return -1
+
+          os.system(cmd)
+          tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
+
+          if(len(tablefile)==1):
+            logging.debug("LDF.Table exported successfully")
+            deletefile=True
+
+      elif(len(taskname)<60):
+          logging.debug("LDF. idf path+name is too long, need to copy the idf here")
+          cmd="cp "+idffile[0]+" ."
+          os.system(cmd)
+
+          if(Density==True):
+            cmd=AiresPath+"/AiresExport -O dX "+taskname+" "+str(TableNumber)
+          elif(Density==False):
+            cmd=AiresPath+"/AiresExport -O X "+taskname+" "+str(TableNumber)
+          else:
+            logging.error("LFD.unrecognized Density value, please state either True/False")
+            return -1
+
+          os.system(cmd)
+          tablefile=glob.glob("*.t"+str(TableNumber))
+
+          if(len(tablefile)==1):
+            logging.debug("LDF.Table exported successfully")
+            deletefile=True
+            cmd="rm "+taskname+".idf"
+            os.system(cmd)
+            cmd="rm "+taskname+".lgf"
+            os.system(cmd)
+
       else:
-        logging.error("unrecognized Density value, please state either True/False")
-        return -1
-
-      os.system(cmd)
-      tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
-
-      if(len(tablefile)==1):
-        logging.debug("Table exported successfully")
-        deletefile=True
+         logging.debug("LDF.task name is to long, AIRES does not support that!")
 
     if(len(tablefile)==1):
-      logging.debug("reading file")
+      logging.debug("LDF.reading file")
 
       from numpy import loadtxt
 
@@ -1198,17 +1294,17 @@ def GetLateralTable(Path,TableNumber,Density=True,Precision="Double"):
       elif(Precision=="Simple"):
         numpyarray=loadtxt(tablefile[0],usecols=(1,2),dtype='f4')
       else:
-        logging.error("unrecognized precison, please state either Double or Simple")
+        logging.error("LDF.unrecognized precison, please state either Double or Simple")
         return -1
 
       if(deletefile==True):
         cmd="rm "+tablefile[0]
         os.system(cmd)
-        logging.debug("Table deleted successfully")
+        logging.debug("LDF.Table deleted successfully")
 
       return numpyarray
     else:
-      logging.error("The requested table was not found and could not be regenerated. Sorry")
+      logging.error("LDF.The requested table was not found and could not be regenerated. Sorry")
       return -1
 
 
@@ -1217,6 +1313,7 @@ def GetLateralTable(Path,TableNumber,Density=True,Precision="Double"):
 
 
 #this gets the effective refraction index from poitn R0 to xant,yant,groundz (default to the core position), all in meters, but kr in 1/km
+#ns is the REFRACIVITY AR SEA LEVEL, kr is the scale height in km.
 import numpy as np
 def GetEffectiveRefractionIndex(x0,y0,z0,ns,kr,groundz,xant=0,yant=0,stepsize = 20000):
 
@@ -1226,6 +1323,7 @@ def GetEffectiveRefractionIndex(x0,y0,z0,ns,kr,groundz,xant=0,yant=0,stepsize = 
 
         rh0 = ns*np.exp(kr*h0) #refractivity at emission
         n_h0=1.E0+1.E-6*rh0 #n at emission
+        #print("n_h0",n_h0,ns,kr,x0,y0,z0,h0,rh0)
 
         hd=(groundz)/1.E3 #detector altitude
 
@@ -1450,7 +1548,6 @@ def DeprecatedReadAiresSry(sry_file,outmode="GRAND"):
             stripedline=line.split(' ',-1)
             xmax = float(stripedline[len(stripedline)-1])
             logging.debug('Found Xmax ' + str(xmax)) #debug level 1
-
 
     try:
         zen

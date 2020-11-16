@@ -188,11 +188,39 @@ def GetAntennaInfo4(InputFilename,EventName):
    AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaInfo4")
    return AntennaInfo
 
-def GetAntennaP2PInfo(InputFilename,EventName):
+#if compute=True, it will try to compute the P2PInfo if it was not found
+#id compute=Save, it will also try to save it in the file.
+def GetAntennaP2PInfo(InputFilename,EventName,compute=False):
    #TODO: Handle error when "EventName" does not exists
    #TODO: Handle error when "EventName/AntennaInfo" does not exists
    #TODO: Handle error when "InputFilename" is not a file, or a valid file.
-   AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaP2PInfo")
+
+   try:
+     AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaP2PInfo")
+   except:
+     if(compute==True or compute=="Save"):
+        print("Computing P2P for "+str(InputFilename))
+
+        OutAntennaInfo=GetAntennaInfo(InputFilename,CurrentEventName)
+        OutIDs=hdf5io.GetAntIDFromAntennaInfo(OutAntennaInfo)
+
+        p2pE=get_p2p_hdf5(InputFilename,usetrace='efield')
+        p2pV=get_p2p_hdf5(InputFilename,usetrace='voltage')
+        p2pFV=get_p2p_hdf5(InputFilename,usetrace='filteredvoltage')
+
+        peaktimeE, peakE=get_peak_time_hilbert_hdf5(InputFilename,usetrace='efield')
+        peaktimeV, peakV=get_peak_time_hilbert_hdf5(InputFilename,usetrace='voltage')
+        peaktimeFV, peakFV=get_peak_time_hilbert_hdf5(InputFilename,usetrace='filteredvoltage')
+
+        DesiredAntennaInfoMeta=CreatAntennaInfoMeta(InputFilename,EventName,AntennaModel="Unknown")
+        AntennaP2PInfo=CreateAntennaP2PInfo(OutIDs, DesiredAntennaInfoMeta, P2Pefield=p2pE,P2Pvoltage=p2pV,P2Pfiltered=p2pFV,HilbertPeakE=peakE,HilbertPeakV=peakV,HilbertPeakFV=peakFV,HilbertPeakTimeE=peaktimeE,HilbertPeakTimeV=peaktimeV,HilbertPeakTimeFV=peaktimeFV)
+
+        if(compute=="Save"):
+          SaveAntennaP2PInfo(InputFilename,AntennaP2PInfo,CurrentEventName)
+     else:
+       print("AntennaP2PInfo not found in ",InputFilename," for ",EventName)
+       AntennaInfo=0
+
    return AntennaInfo
 
 
@@ -427,6 +455,10 @@ def GetXmaxPosition(EventInfo):
    #TODO: Handle errors
     return EventInfo["XmaxPosition"]
 
+def GetXmaxAltitude(EventInfo):
+   #TODO: Handle errors
+    return EventInfo["XmaxAltitude"]
+
 def GetPrimaryFromEventInfo(EventInfo):
    #TODO: Handle errors
     return EventInfo["Primary"]
@@ -532,9 +564,17 @@ def GetTimeWindowMax(SignalSimInfo):
    #TODO: Handle errors
     return float(SignalSimInfo["TimeWindowMax"])
 
+def GetFieldSimulator(SignalSimInfo):
+   #TODO: Handle errors
+    return SignalSimInfo["FieldSimulator"]
+
+def GetRefractionIndexModel(SignalSimInfo):
+   #TODO: Handle errors
+    return SignalSimInfo["RefractionIndexModel"].data[0]
+
 def GetRefractionIndexModelParameters(SignalSimInfo):
    #TODO: Handle errors
-    return SignalSimInfo["RefractionIndexModelParameters"]
+    return SignalSimInfo["RefractionIndexModelParameters"].data[0]
 
 ####################################################################################################################################################################################
 #AntennaInfo Creators
@@ -797,14 +837,49 @@ def GetP2P_efieldFromAntennaP2PInfo(AntennaP2PInfo):
    #TODO: Handle errors
    return AntennaP2PInfo["P2P_efield"]
 
+def GetP2Px_efieldFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2Px_efield"]
+
+def GetP2Py_efieldFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2Py_efield"]
+
+def GetP2Pz_efieldFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2Pz_efield"]
+
 def GetP2P_voltageFromAntennaP2PInfo(AntennaP2PInfo):
    #TODO: Handle errors
    return AntennaP2PInfo["P2P_voltage"]
+
+def GetP2Px_voltageFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2Px_voltage"]
+
+def GetP2Py_voltageFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2Py_voltage"]
+
+def GetP2Pz_voltageFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2Pz_voltage"]
 
 def GetP2P_filteredFromAntennaP2PInfo(AntennaP2PInfo):
    #TODO: Handle errors
    return AntennaP2PInfo["P2P_filtered"]
 
+def GetP2Px_filteredFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2Px_filtered"]
+
+def GetP2Py_filteredFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2Py_filtered"]
+
+def GetP2Pz_filteredFromAntennaP2PInfo(AntennaP2PInfo):
+   #TODO: Handle errors
+   return AntennaP2PInfo["P2Pz_filtered"]
 ########################################################################################################################
 # Create and Save traces
 ########################################################################################################################
@@ -1019,54 +1094,55 @@ def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, use
       else:
         peaktime[i-antennamin]=-1e20
 
-#      #PLOT
-#      if DISPLAY :
-#        print(peakamplitude[i-antennamin])
-#        print('peaktime = ',peaktime[i-antennamin])
-#
-#        hilbert_trace_x=hilbert(trace[:,1])
-#        hilbert_amp_x = np.abs(hilbert_trace_x)
-#        hilbert_trace_y=hilbert(trace[:,2])
-#        hilbert_amp_y = np.abs(hilbert_trace_y)
-#        hilbert_trace_z=hilbert(trace[:,3])
-#        hilbert_amp_z = np.abs(hilbert_trace_z)
-#
-#        hilbert_amp2=np.zeros(np.shape(trace[:,1:4]))
-#        hilbert_amp2[:,0]=hilbert_amp_x
-#        hilbert_amp2[:,1]=hilbert_amp_y
-#        hilbert_amp2[:,2]=hilbert_amp_z
-#        #peakamplitude[i-antennamin]=max([max(hilbert_amp2[:,0]), max(hilbert_amp2[:,1]), max(hilbert_amp2[:,2])]) #find best peakamp for the 3 channels
-#        #peaktime[i-antennamin]=trace[np.where(hilbert_amp2 == peakamplitude[i-antennamin])[0],0]                # get the time of the peak amplitude
-#
-#
-#        fig1 = plt.figure(1,figsize=(7,5), dpi=100, facecolor='w', edgecolor='k')
-#
-#        ax1=fig1.add_subplot(221)
-#        plt.plot(trace[:,0], hilbert_amp[:,0], label = 'Hilbert env channel x')
-#        plt.plot(trace[:,0], trace[:,1], label = 'channel x')
-#        plt.plot(trace[:,0], hilbert_amp_x, label = 'Hilbertx env channel x')
-#
-#        plt.legend(loc = 'best')
-#
-#        ax1=fig1.add_subplot(222)
-#        plt.plot(trace[:,0], hilbert_amp[:,1], label = 'Hilbert env channel y')
-#        plt.plot(trace[:,0], trace[:,2], label = 'channel y')
-#        plt.plot(trace[:,0], hilbert_amp_y, label = 'Hilbertx env channel y')
-#        plt.legend(loc = 'best')
-#
-#        ax1=fig1.add_subplot(223)
-#        plt.plot(trace[:,0], hilbert_amp[:,2], label = 'Hilbert env channel z')
-#        plt.plot(trace[:,0], trace[:,3], label = 'channel z')
-#        plt.plot(trace[:,0], hilbert_amp_z, label = 'Hilbertx env channel z')
-#        plt.legend(loc = 'best')
-#
-#        ax1=fig1.add_subplot(224)
-#        plt.plot(trace[:,0], np.sqrt(trace[:,1]**2 + trace[:,2]**2 + trace[:,3]**2), label = 'modulus signal')
-#        plt.axvline(peaktime[i-antennamin], color='r', label = 'Timepeak')
-#        plt.xlabel('Time (ns)')
-#        plt.ylabel('Amplitude (muV) (s)')
-#        plt.legend(loc = 'best')
-#        plt.show()
+      #PLOT
+      DISPLAY=False
+      if DISPLAY :
+        print(peakamplitude[i-antennamin])
+        print('peaktime = ',peaktime[i-antennamin])
+
+        hilbert_trace_x=hilbert(trace[:,1])
+        hilbert_amp_x = np.abs(hilbert_trace_x)
+        hilbert_trace_y=hilbert(trace[:,2])
+        hilbert_amp_y = np.abs(hilbert_trace_y)
+        hilbert_trace_z=hilbert(trace[:,3])
+        hilbert_amp_z = np.abs(hilbert_trace_z)
+
+        hilbert_amp2=np.zeros(np.shape(trace[:,1:4]))
+        hilbert_amp2[:,0]=hilbert_amp_x
+        hilbert_amp2[:,1]=hilbert_amp_y
+        hilbert_amp2[:,2]=hilbert_amp_z
+        #peakamplitude[i-antennamin]=max([max(hilbert_amp2[:,0]), max(hilbert_amp2[:,1]), max(hilbert_amp2[:,2])]) #find best peakamp for the 3 channels
+        #peaktime[i-antennamin]=trace[np.where(hilbert_amp2 == peakamplitude[i-antennamin])[0],0]                # get the time of the peak amplitude
+
+
+        fig1 = plt.figure(1,figsize=(7,5), dpi=100, facecolor='w', edgecolor='k')
+
+        ax1=fig1.add_subplot(221)
+        plt.plot(trace[:,0], hilbert_amp[:,0], label = 'Hilbert env channel x')
+        plt.plot(trace[:,0], trace[:,1], label = 'channel x')
+        plt.plot(trace[:,0], hilbert_amp_x, label = 'Hilbertx env channel x')
+
+        plt.legend(loc = 'best')
+
+        ax1=fig1.add_subplot(222)
+        plt.plot(trace[:,0], hilbert_amp[:,1], label = 'Hilbert env channel y')
+        plt.plot(trace[:,0], trace[:,2], label = 'channel y')
+        plt.plot(trace[:,0], hilbert_amp_y, label = 'Hilbertx env channel y')
+        plt.legend(loc = 'best')
+
+        ax1=fig1.add_subplot(223)
+        plt.plot(trace[:,0], hilbert_amp[:,2], label = 'Hilbert env channel z')
+        plt.plot(trace[:,0], trace[:,3], label = 'channel z')
+        plt.plot(trace[:,0], hilbert_amp_z, label = 'Hilbertx env channel z')
+        plt.legend(loc = 'best')
+
+        ax1=fig1.add_subplot(224)
+        plt.plot(trace[:,0], np.sqrt(trace[:,1]**2 + trace[:,2]**2 + trace[:,3]**2), label = 'modulus signal')
+        plt.axvline(peaktime[i-antennamin], color='r', label = 'Timepeak')
+        plt.xlabel('Time (ns)')
+        plt.ylabel('Amplitude (muV) (s)')
+        plt.legend(loc = 'best')
+        plt.show()
 
     return peaktime, peakamplitude
 
@@ -1755,5 +1831,215 @@ def get_time_amplitudes_fluence_hdf5(InputFilename, antennamax="All",antennamin=
     return p2p,peak,fluence
 
 
+def get_crosscorrelation_hdf5(InputFilename,InterpolatedFilename, usetrace="efield", DISPLAY=False):
+
+    #TODO: Handle Errors
+    '''
+    designed for the starshape with 160 + 16 antennas. Computes the cross correlation in the test antenas, with the interpolated antenas on the second file
+
+    Parameters:
+    InputFilename: str
+        HDF5File. A Second file named HDF5File.Interpolated.usetrace.hdf5 is expected to exist, with the interpolated traces
+    usetrace: str
+       efield, voltage, filteredvoltage
+
+    Output: maxcorrelation,lag, D (average power in the difference),average power of the simulated trace
+
+    '''
+
+    CurrentRunInfo=GetRunInfo(InputFilename)
+    CurrentEventName=GetEventName(CurrentRunInfo,0) #using the first event of each file (there is only one for now)
+    CurrentAntennaInfo=GetAntennaInfo(InputFilename,CurrentEventName)
+    CurrentSignalSimInfo=GetSignalSimInfo(InputFilename,CurrentEventName)
+    tbinsize=GetTimeBinSize(CurrentSignalSimInfo)
+
+    maxcorrelationx= np.zeros(16)
+    maxcorrelationy= np.zeros(16)
+    maxcorrelationz= np.zeros(16)
+
+    lagx= np.zeros(16)
+    lagy= np.zeros(16)
+    lagz= np.zeros(16)
+
+    Dx= np.zeros(16)
+    Dy= np.zeros(16)
+    Dz= np.zeros(16)
+
+    powerx=np.zeros(16)
+    powery=np.zeros(16)
+    powerz=np.zeros(16)
+
+    InterpolatedRunInfo=GetRunInfo(InterpolatedFilename)
+    InterpolatedEventName=GetEventName(InterpolatedRunInfo,0) #using the first event of each file (there is only one for now)
+    InterpolatedAntennaInfo=GetAntennaInfo(InterpolatedFilename,InterpolatedEventName)
+    InterpolatedSignalSimInfo=GetSignalSimInfo(InterpolatedFilename,InterpolatedEventName)
+
+    for i in range(0,16):
+      AntennaID=GetAntennaID(CurrentAntennaInfo,i+160)
+      InterpolatedAntennaID=GetAntennaID(InterpolatedAntennaInfo,i)
+      if(usetrace=='efield'):
+        trace=GetAntennaEfield(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+        interpolatedtrace=GetAntennaEfield(InterpolatedFilename,InterpolatedEventName,InterpolatedAntennaID,OutputFormat="numpy")
+        if(np.shape(trace) != np.shape(interpolatedtrace)):
+          print("trace shape and interpolated shape are not equal",np.shape(trace), np.shape(interpolatedtrace))
+          if(np.shape(trace)[0] < np.shape(interpolatedtrace)[0]):
+             interpolatedtrace=interpolatedtrace[0:np.shape(trace)[0],:]
+          else:
+             trace=interpolatedtrace[0:np.shape(interpolatedtrace)[0],:]
+          if(np.shape(trace) != np.shape(interpolatedtrace)):
+            print("this didnt fix it")
+          else:
+            print("this fixed it")
+      elif(usetrace=='voltage'):
+        trace=GetAntennaVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+        interpolatedtrace=GetAntennaVoltage(InterpolatedFilename,InterpolatedEventName,InterpolatedAntennaID,OutputFormat="numpy")
+        if(np.shape(trace) != np.shape(interpolatedtrace)):
+          print("trace shape and interpolated shape are not equal",np.shape(trace), np.shape(interpolatedtrace))
+          if(np.shape(trace)[0] < np.shape(interpolatedtrace)[0]):
+             interpolatedtrace=interpolatedtrace[0:np.shape(trace)[0],:]
+          else:
+             trace=interpolatedtrace[0:np.shape(interpolatedtrace)[0],:]
+          if(np.shape(trace) != np.shape(interpolatedtrace)):
+            print("this didnt fix it")
+          else:
+            print("this fixed it")
+      elif(usetrace=='filteredvoltage'):
+        trace=GetAntennaFilteredVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+        interpolatedtrace=GetAntennaFilteredVoltage(InterpolatedFilename,InterpolatedEventName,InterpolatedAntennaID,OutputFormat="numpy")
+        if(np.shape(trace) != np.shape(interpolatedtrace)):
+          print("trace shape and interpolated shape are not equal",np.shape(trace), np.shape(interpolatedtrace))
+          if(np.shape(trace)[0] < np.shape(interpolatedtrace)[0]):
+             interpolatedtrace=interpolatedtrace[0:np.shape(trace)[0],:]
+          else:
+             trace=interpolatedtrace[0:np.shape(interpolatedtrace)[0],:]
+          if(np.shape(trace) != np.shape(interpolatedtrace)):
+            print("this didnt fix it")
+          else:
+            print("this fixed it")
+      else:
+        print('You must specify either efield, voltage or filteredvoltage, bailing out')
+        return -1,-1,-1
+
+      #Xcomponent
+      tracex=trace[:,1]
+      interpolatedx=interpolatedtrace[:,1]
+
+      difference=tracex-interpolatedx
+      meanx=tracex.mean()
+      interpolatedmeanx=interpolatedx.mean()
+      ccovx=np.correlate(tracex - meanx, interpolatedx - interpolatedmeanx, mode='full')
+      npts= len(tracex)
+      lagsx = np.arange(-npts + 1, npts)
+      stdx=tracex.std()
+      interpolatedstdx=interpolatedx.std()
+      if(stdx!=0 and interpolatedstdx!=0):
+        ccorx = ccovx / (npts * stdx * interpolatedstdx)
+      else:
+        continue
+      if(np.max(ccorx)>np.abs(np.min(ccorx))):
+        lagx[i] = lagsx[np.argmax(ccorx)]
+        maxcorrelationx[i]=np.max(ccorx)
+      else:
+        lagx[i] = lagsx[np.argmin(ccorx)]
+        maxcorrelationx[i]=np.min(ccorx)
+      powerx[i]=np.dot(tracex, tracex)/npts
+      #power in the diference
+      Dx[i]=stdx**2+interpolatedstdx**2 + (meanx**2+interpolatedmeanx**2-2*meanx*interpolatedmeanx)- 2*maxcorrelationx[i]*stdx*interpolatedstdx
+      #print("Dx",Dx[i])
+      #print("Powerx",powerx[i])
+
+      #Ycomponent
+      tracey=trace[:,2]
+      interpolatedy=interpolatedtrace[:,2]
+      difference=tracey-interpolatedy
+      meany=tracey.mean()
+      interpolatedmeany=interpolatedy.mean()
+      ccovy=np.correlate(tracey - meany, interpolatedy - interpolatedmeany , mode='full')
+      npts= len(tracey)
+      lagsy = np.arange(-npts + 1, npts)
+      stdy=tracey.std()
+      interpolatedstdy=interpolatedy.std()
+      if(stdy!=0 and interpolatedstdy!=0):
+        ccory = ccovy / (npts * stdy * interpolatedstdy)
+      else:
+        continue
+      if(np.max(ccory)>np.abs(np.min(ccory))):
+        lagy[i] = lagsy[np.argmax(ccory)]
+        maxcorrelationy[i]=np.max(ccory)
+      else:
+        lagy[i] = lagsy[np.argmin(ccory)]
+        maxcorrelationy[i]=np.min(ccory)
+      powery[i]=np.dot(tracey, tracey)/npts
+
+      #power in the diference
+      #print("stdy",stdy)
+      #print("istdy",interpolatedstdy)
+      #print("meany",meany)
+      #print("imeany",interpolatedmeany)
+      #print("maxcorrelationy",maxcorrelationy[i])
+      Dy[i]=stdy**2+interpolatedstdy**2 + (meany**2+interpolatedmeany**2-2*meany*interpolatedmeany)- 2*maxcorrelationy[i]*stdy*interpolatedstdy
+      #print("Dy",Dy[i])
+      #print("Powery",powery[i])
+
+
+      #Zcomponent
+      tracez=trace[:,3]
+      interpolatedz=interpolatedtrace[:,3]
+      difference=tracez-interpolatedz
+      meanz=tracez.mean()
+      interpolatedmeanz=interpolatedz.mean()
+      ccovz=np.correlate(tracez - meanz, interpolatedz - interpolatedmeanz, mode='full')
+      npts= len(tracez)
+      lagsz = np.arange(-npts + 1, npts)
+      stdz=tracez.std()
+      interpolatedstdz=interpolatedz.std()
+      if(stdz!=0 and interpolatedstdz!=0):
+        ccorz = ccovz / (npts * stdz * interpolatedstdz)
+      else:
+        continue
+      if(np.max(ccorz)>np.abs(np.min(ccorz))):
+        lagz[i] = lagsz[np.argmax(ccorz)]
+        maxcorrelationz[i]=np.max(ccorz)
+      else:
+        lagz[i] = lagsz[np.argmin(ccorz)]
+        maxcorrelationz[i]=np.min(ccorz)
+      powerz[i]=np.dot(tracez, tracez)/npts
+      #power in the diference
+      Dz[i]=stdz**2+interpolatedstdz**2 + (meanz**2+interpolatedmeanz**2-2*meanz*interpolatedmeanz)- 2*maxcorrelationz[i]*stdz*interpolatedstdz
+      #print("Dz",Dz[i])
+      #print("Powerz",powerz[i])
+      if(DISPLAY):
+        fig1, ((ax1, ax2,ax3), (ax4, ax5,ax6))  = plt.subplots(2, 3, sharey='col', sharex='row')
+        ax1.plot(interpolatedtrace[:,0], interpolatedx, linestyle='--',color='g', label = "Synthetized")
+        ax1.plot(trace[:,0], tracex, label = "Simulation")
+        tmp=ax1.set(ylabel=usetrace + ' Signal in X')
+        ax4.plot(lagsx, ccorx*np.max(tracex))
+        ax4.set_ylabel('cross-correlation')
+
+        ax2.plot(interpolatedtrace[:,0], interpolatedy, linestyle='--',color='g', label = "Synthetized")
+        ax2.plot(trace[:,0], tracey, label = "Simulation")
+        tmp=ax1.set(ylabel='Signal in Y')
+        ax5.plot(lagsy, ccory*np.max(tracey))
+        ax5.set_ylabel('cross-correlation')
+
+        ax3.plot(interpolatedtrace[:,0], interpolatedz, linestyle='--',color='g', label = "Synthetized")
+        ax3.plot(trace[:,0], tracez, label = "Simulation")
+        tmp=ax1.set(ylabel=usetrace +' Signal in Z')
+        ax6.plot(lagsz, ccorz*np.max(tracez))
+        ax6.set_ylabel('cross-correlation')
+
+        print("X",str(i),maxcorrelationx[i],lagx[i],Dx[i])
+        print("Y",str(i),maxcorrelationy[i],lagy[i],Dy[i])
+        print("Z",str(i),maxcorrelationz[i],lagz[i],Dz[i])
+
+        plt.show()
+
+    #end for antennas
+
+    maxcorrelation = np.stack((maxcorrelationx, maxcorrelationy, maxcorrelationz), axis=0)
+    lag = np.stack((lagx, lagy, lagz), axis=0)
+    D= np.stack((Dx, Dy, Dz), axis=0)
+    Power=np.stack((powerx, powery, powerz), axis=0)
+    return maxcorrelation,lag,D,Power
 
 
