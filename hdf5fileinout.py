@@ -574,7 +574,8 @@ def GetRefractionIndexModel(SignalSimInfo):
 
 def GetRefractionIndexModelParameters(SignalSimInfo):
    #TODO: Handle errors
-    return SignalSimInfo["RefractionIndexModelParameters"].data[0]
+    ModelParameters=SignalSimInfo["RefractionIndexModelParameters"]
+    return ModelParameters.data[0]
 
 ####################################################################################################################################################################################
 #AntennaInfo Creators
