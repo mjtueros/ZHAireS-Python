@@ -445,8 +445,29 @@ def GetSlantXmaxFromSry(sry_file,outmode="N/A"): #To do. Handle when Xmax is not
     logging.error("GetSlantXmaxFromSry:file not found or invalid:"+sry_file)
     raise
     return -1
-
-
+#
+#Charged pcles. at maximum
+def GetNmaxFromSry(sry_file,outmode="N/A"): #To do. Handle when Xmax is not found, becouse the fit didnt converge
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      for line in datafile:
+        if 'Charged pcles. at maximum' in line:
+          line = line.lstrip()
+          stripedline=line.split(' ',-1)
+          nmax = float(stripedline[len(stripedline)-1])
+          #logging.debug('Found Nmax ' + str(nmax)) #debug level 1
+          return nmax
+      try:
+        xmax
+      except NameError:
+        logging.info('warning nmax not found')
+        xmax=-1
+        return xmax
+  except:
+    logging.error("GetNmaxFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1
 #                              Altitude  Distance     x        y        z
 #      Location of max.(Km):     3.612     3.66     0.00     0.57     3.61
 def GetKmXmaxFromSry(sry_file,outmode="N/A"): #To do. Handle when Xmax is not found, becouse the fit didnt converge, or becouse this is not ZHAireS, or its latest version

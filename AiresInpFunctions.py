@@ -568,7 +568,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
             file.write("AddAntenna A{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(i),xyz[i,0],xyz[i,1],xyz[i,2]))
           elif((projection=="conical" or projection=="Conical")):
             file.write("AddAntenna A{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(i),xyz3[i,0],xyz3[i,1],xyz3[i,2]))
-          elif((type(projection)==type(1) or type(projection)==type(1.1)) and xyz4[i,2]>-0.1): #if it is an int or a float
+          elif((type(projection)==type(1) or type(projection)==type(1.1)) and xyz4[i,2]>-0.1): #if it is an int or a floatn
             file.write("AddAntenna A{0:d} {1:11.2f} {2:11.2f} {3:11.2f}\n".format(int(i),xyz4[i,0],xyz4[i,1],xyz4[i,2]))
 
         file.write('####################################################################################\n\n')
