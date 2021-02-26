@@ -40,11 +40,11 @@ def CreateSmartTimeWindowInp(xmaxdistance,OutputFile,AdditionalTmin=0,Additional
 
     file.write('######################################################################################\n')
     file.write('# Antenna TimeWindow created with CreateSmartTimeWindowInp v0.1                      #\n')
-    file.write('# Xmax to Antenna Distance:{0:.2f} km\n'.format(xmaxdistance/1000))
+    file.write('# Xmax to Antenna Distance:{0:.7f} km\n'.format(xmaxdistance/1000))
     file.write('######################################################################################\n')
-    file.write('AntennaTimeMin {0:0.1f} ns\n'.format(Tmin))
-    file.write('AntennaTimeMax {0:0.1f} ns\n'.format(Tmax))
-    file.write('ExpectedXmaxDist {0:0.1f} m\n'.format(xmaxdistance))
+    file.write('AntennaTimeMin {0:0.2f} ns\n'.format(Tmin))
+    file.write('AntennaTimeMax {0:0.2f} ns\n'.format(Tmax))
+    file.write('ExpectedXmaxDist {0:0.2f} m\n'.format(xmaxdistance))
     file.write('######################################################################################\n\n')
 
 

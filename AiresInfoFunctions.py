@@ -475,7 +475,7 @@ def GetKmXmaxFromSry(sry_file,outmode="N/A"): #To do. Handle when Xmax is not fo
     datafile=open(sry_file,'r')
     with open(sry_file, "r") as datafile:
       for line in datafile:
-        if 'Location of max.(Km)' in line:
+        if ('Location of max.(Km)' in line) or ('Pos. Max.' in line)  :
           line = line.lstrip()
           stripedline=line.split()
           kmxmax = float(stripedline[len(stripedline)-5])
@@ -1129,8 +1129,7 @@ def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
 
                     # Use stored occurrence value
                     AntennaID[i] += str(dups[val][1])
-
-            #print(AntennaID,AntennaX,AntennaY,AntennaZ,AntennaT)
+                    
             return AntennaID,AntennaX,AntennaY,AntennaZ,AntennaT
 
         if(ReadLegacy):
@@ -1151,14 +1150,10 @@ def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
         elif 'Antenna|   X [m]' in line:
           ReadLegacy=True
 
-
-    return [-1],[-1],[-1],[-1],[-1]
-
   except:
     logging.error("GetAntennaInfoFromSry:file not found or invalid:"+sry_file)
     raise
-    return [-1],[-1],[-1],[-1],[-1]
-
+    return -1,-1,-1,-1,-1
 
 def GetLongitudinalTable(Path,TableNumber,Slant=True,Precision="Double"):
     #todo: check against a list of valid tables
