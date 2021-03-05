@@ -1074,7 +1074,7 @@ def get_antenna_t0(xant,yant,hant, azimuthdeg, zenithdeg):
     return dtna*1.0e9
 
 def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
-
+  
   AntennaID=[]
   AntennaX=[]
   AntennaY=[]
@@ -1129,7 +1129,7 @@ def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
 
                     # Use stored occurrence value
                     AntennaID[i] += str(dups[val][1])
-
+                    
             return AntennaID,AntennaX,AntennaY,AntennaZ,AntennaT
 
         if(ReadLegacy):
@@ -1154,7 +1154,6 @@ def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
     logging.error("GetAntennaInfoFromSry:file not found or invalid:"+sry_file)
     raise
     return -1,-1,-1,-1,-1
-
 
 def GetLongitudinalTable(Path,TableNumber,Slant=True,Precision="Double"):
     #todo: check against a list of valid tables
