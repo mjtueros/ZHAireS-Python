@@ -574,9 +574,22 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
 
       if(vspread>0):
         spread=random.uniform(-vspread,vspread)
-        xyz[nant*8+i,2]+=spread  #moving it vertically
-        xyz3[nant*8+i,2]+=spread #moving it vertically
-        xyz1[nant*8+i]+=v*spread #moving it along the axis
+        if((projection=="geometric" or projection=="Geometric" or projection=="Geometrical" or projection=="geometrical")):
+          xyz[nant*8+i]+=v*spread
+          xyz3[nant*8+i]+=v*spread
+          xyz1[nant*8+i]+=v*spread #moving it along the axis
+        else: #move it towards xmax
+          vtoxmax= XmaxPosition-xyz[nant*8+i]
+          vtoxmax = vtoxmax/np.linalg.norm(vtoxmax)
+          xyz[nant*8+i]+=vtoxmax*spread
+
+          vtoxmax= XmaxPosition-xyz3[nant*8+i]
+          vtoxmax = vtoxmax/np.linalg.norm(vtoxmax)
+          xyz3[nant*8+i]+=vtoxmax*spread
+
+          vtoxmax= XmaxPosition-xyz1[nant*8+i]
+          vtoxmax = vtoxmax/np.linalg.norm(vtoxmax)
+          xyz1[nant*8+i]+=vtoxmax*spread
 
     print("projection",projection)
     if(type(projection)==type(1) or type(projection)==type(1.1) ): #if it is an int or a float
