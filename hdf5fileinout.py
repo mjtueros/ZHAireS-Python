@@ -924,7 +924,8 @@ def SaveEfieldTable(outputfilename,EventName,antennaID,efield):
    #TODO: HAndle error when "efield" already exists
    #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
    #TODO: Adjust format so that we have the relevant number of significant figures. Maybe float64 is not necesary?. What about using float32 or even float 16?
-   efield.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/efield", format="hdf5", append=True, compression=hdf5io_compression,serialize_meta=True)
+   #overwrite=True y overwrite=true implies that it will overwrite the table, if it exists 
+   efield.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/efield", format="hdf5", append=True, overwrite=False, compression=hdf5io_compression,serialize_meta=True)
 
 
 
@@ -965,12 +966,12 @@ def CreateVoltageTable(voltage, EventName, EventNumber, AntennaID, AntennaNumber
 def SaveVoltageTable(outputfilename,EventName,antennaID,voltage):
    #TODO: HAndle error when "voltage" already exists
    #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
-   voltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/voltage", format="hdf5", append=True,compression=hdf5io_compression,serialize_meta=True)
+   voltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/voltage", format="hdf5", append=True, overwrite=True,compression=hdf5io_compression,serialize_meta=True)
 
 def SaveFilteredVoltageTable(outputfilename,EventName,antennaID,filteredvoltage):
    #TODO: HAndle error when "voltage" already exists
    #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
-   filteredvoltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/filteredvoltage", format="hdf5", append=True,compression=hdf5io_compression,serialize_meta=True)
+   filteredvoltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/filteredvoltage", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression,serialize_meta=True)
 
 #######################################################################################################################################################################
 # Other Stuff to see how things could be done
@@ -1638,7 +1639,7 @@ def get_time_amplitudes_fluence_hdf5(InputFilename, antennamax="All",antennamin=
             im=ax34.plot(trace[:,0],hilbert_amp[:,2])
             tmp=ax34.set(title="||2 Antenna "+str(i),xlabel='time[ns]',ylabel='Amplitude ' + usetrace)
 
-        plt.show()
+            plt.show()
 
         peaktime[i-antennamin]=-1e20
         peakbin[i-antennamin]=-1e20
@@ -2044,3 +2045,93 @@ def get_crosscorrelation_hdf5(InputFilename,InterpolatedFilename, usetrace="efie
     return maxcorrelation,lag,D,Power
 
 
+
+def noise_removal(signal, repeat):
+    copy_signal = np.copy(signal)
+    for j in range(repeat):
+        for i in range(3, len(signal)):
+            copy_signal[i - 1] = (copy_signal[i - 2] + copy_signal[i]) / 2
+    return copy_signal
+
+def get_noise(original_signal, removed_signal):
+    buffer = []
+    for i in range(len(removed_signal)):
+        buffer.append(original_signal[i] - removed_signal[i])
+    return np.array(buffer)
+    
+    
+def get_noise_std(trace1):
+    #get the signal    
+    strace1= noise_removal(trace1, 10)
+    #and the noise
+    noise1=get_noise(trace1,strace1)
+    #and its std  
+    std1=np.std(noise1,axis=0)
+    return std1
+
+
+def get_signalovernoise_hdf5(InputFilename, antennamax="All",antennamin=0, usetrace="efield", DISPLAY=False) :
+
+    #TODO: Handle Errors
+    '''
+    read in all traces from antennamax to antennamin and output noise amplitude, 
+
+    Parameters:
+    InputFilename: str
+        HDF5File
+    antennamin: int
+       starting antenna (starts from 0)
+    antennamax: int
+       final antenna ('All uses all the antennas)
+    usetrace: str
+       efield, voltage, filteredvoltage
+e
+
+    Output: noise
+
+    '''
+
+    CurrentRunInfo=GetRunInfo(InputFilename)
+    CurrentEventName=GetEventName(CurrentRunInfo,0) #using the first event of each file (there is only one for now)
+    CurrentAntennaInfo=GetAntennaInfo(InputFilename,CurrentEventName)
+    CurrentSignalSimInfo=GetSignalSimInfo(InputFilename,CurrentEventName)
+    binsize=GetTimeBinSize(CurrentSignalSimInfo)
+    tmin=GetTimeWindowMin(CurrentSignalSimInfo)
+    tmax=GetTimeWindowMax(CurrentSignalSimInfo)
+
+    #handlte the "all" situation
+    if(antennamax=='All' or antennamax=='all'):
+      antennamax=len(CurrentAntennaInfo)-1
+
+
+    noise_x = np.zeros(1+antennamax-antennamin)
+    noise_y = np.zeros(1+antennamax-antennamin)
+    noise_z = np.zeros(1+antennamax-antennamin)
+    noise_total= np.zeros(1+antennamax-antennamin)
+    
+    for i in range(antennamin,antennamax+1):
+      AntennaID=GetAntennaID(CurrentAntennaInfo,i)
+      if(usetrace=='efield'):
+        trace=GetAntennaEfield(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      elif(usetrace=='voltage'):
+        trace=GetAntennaVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      elif(usetrace=='filteredvoltage'):
+        trace=GetAntennaFilteredVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
+      else:
+        print('You must specify either efield, voltage or filteredvoltage, bailing out')
+        return -1,-1,-1
+
+
+      #now we get the peak maximum signal over noise
+      max1=np.max(np.abs(trace),axis=0)
+      noise= get_noise_std(trace)
+      noise= max1/noise
+      noise_x[i-antennamin]= noise[1]
+      noise_y[i-antennamin]= noise[2]
+      noise_z[i-antennamin]= noise[3]
+      noise_total[i-antennamin]=np.linalg.norm(noise[1:4]) #index 0 holds the time on the trace
+
+
+    noise = np.stack((noise_x, noise_y, noise_z, noise_total), axis=0)
+
+    return noise

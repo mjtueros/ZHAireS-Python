@@ -72,10 +72,13 @@ def ComputeVoltageOnHDF5(inputfilename,EventNumber=0,FreqMin=100.e6,FreqMax=180.
       hdf5io.SaveVoltageTable(outfilename,EventName,antennaID,TableVoltage)
 
       if(FreqMin!=FreqMax):
-        #filtering the trace using the filters function in signal_processing
-        filteredvoltage=filters(voltage, FreqMin, FreqMax)
-        #now i need to put a numpy array into an astropy table, but before y change the data type to float32 so that it takes less space (its still good to 7 decimals)
-        filteredvoltage32=filteredvoltage.astype('f4')
+        if(voltage.any()): #check its not all 0
+            #filtering the trace using the filters function in signal_processing
+            filteredvoltage=filters(voltage, FreqMin, FreqMax)
+            #now i need to put a numpy array into an astropy table, but before y change the data type to float32 so that it takes less space (its still good to 7 decimals)
+            filteredvoltage32=filteredvoltage.astype('f4')
+        else:
+            filteredvoltage32=voltage32  
         TableFilteredVoltage = hdf5io.CreateVoltageTable(filteredvoltage32,EventName,0,antennaID,i,"signal_processing.filters",info={"FreqMin":FreqMin,"FreqMax":FreqMax})
         hdf5io.SaveFilteredVoltageTable(outfilename,EventName,antennaID,TableFilteredVoltage)
       #endif

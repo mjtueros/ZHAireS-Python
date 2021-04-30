@@ -42,10 +42,10 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     RunName=filename   #for now the name of the run is just the filename
 
     inpfile=glob.glob(InputFolder+"/*.inp")
-    if(len(idffile)!=1):
+    if(len(inpfile)!=1):
       logging.critical("we can only get the core position from the input file, at it should be in the same directory as the sry")
       logging.critical("defaulting to (0.0,0)")
-      inpfile[0]=None
+      inpfile=None
       CorePosition=(0.0,0.0,0.0)
 
 
@@ -87,7 +87,7 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
     EnergyInNeutrinos=AiresInfo.GetEnergyFractionInNeutrinosFromSry(sryfile[0])
     EnergyInNeutrinos=EnergyInNeutrinos*Energy
 
-    if(inpfile[0]!=None):
+    if(inpfile!=None):
       CorePosition=AiresInfo.GetCorePositionFromInp(inpfile[0])
 
     print("CorePosition:",CorePosition)
