@@ -25,21 +25,25 @@ print(Filename)
 
 
 cmd=python + ' ' + ZHAireSReader + ' ./'
+print(cmd)
 wd = os.getcwd()
 p = subprocess.Popen(cmd,cwd=wd,shell=True)
 stdout,stderr=p.communicate()
 
 cmd=python + ' ' + ComputeVoltage + ' '+ Filename
+print(cmd)
 wd = os.getcwd()
 p = subprocess.Popen(cmd,cwd=wd,shell=True)
 stdout,stderr=p.communicate()
 
 cmd=python + ' ' + ComputePeak2Peak + ' '+ Filename
+print(cmd)
 wd = os.getcwd()
 p = subprocess.Popen(cmd,cwd=wd,shell=True)
 stdout,stderr=p.communicate()
 
 cmd=python + ' ' + RemoveTables + ' ' + Filename + ' ' + Filename2 +' AntennaTraces'
+print(cmd)
 wd = os.getcwd()
 p = subprocess.Popen(cmd,cwd=wd,shell=True)
 stdout,stderr=p.communicate()

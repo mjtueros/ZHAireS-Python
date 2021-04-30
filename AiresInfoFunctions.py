@@ -34,6 +34,7 @@ import logging
 
 #AiresPath="/home/mjtueros/aires/bin"
 AiresPath=os.environ["AIRESBINDIR"]
+#AiresPath="/home/mjtueros/AiresRepository/Dropbox/AiresBzr/Aires.19-04-04-ZHAireS-development/zhadl/bin"
 
 def GetZenithAngleFromSry(sry_file,outmode="GRAND"):
   try:
@@ -1180,7 +1181,7 @@ def GetLongitudinalTable(Path,TableNumber,Slant=True,Precision="Double"):
         else:
             logging.error("unrecognized Slant value, please state either True/False")
             return -1
-
+        logging.debug("abut to run "+ cmd)         
         os.system(cmd)
         tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
 
