@@ -616,12 +616,13 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
           file.write('# Projection Mode: {0:s}\n'.format(projection))
         file.write('# Magnetic Field Zenith: {0:.2f} deg\n'.format(zen_B*radtodeg))
         file.write('# Magnetic Field Azimuth: {0:.2f} deg\n'.format(az_B*radtodeg))
-        file.write('# Adjusting time window with distance\n')
+        if(tmin == "Auto" and tmax == "Auto"):        
+          file.write('# Adjusting time window with distance\n')
+        #file.write('AntennaTimeMin {0:0.1f} ns\n'.format(Tmin))
+        #file.write('AntennaTimeMax {0:0.1f} ns\n'.format(Tmax))        
         file.write('####################################################################################\n\n')
         file.write('ZHAireS On\n')
         file.write('FresnelTime On\n')
-        #file.write('AntennaTimeMin {0:0.1f} ns\n'.format(Tmin))
-        #file.write('AntennaTimeMax {0:0.1f} ns\n'.format(Tmax))
 
 
         for i in np.arange(nant*8):
