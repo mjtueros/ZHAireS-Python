@@ -120,6 +120,12 @@ def SaveAntennaP2PInfo(OutFilename,AntennaP2PInfo,EventName):
    #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
    AntennaP2PInfo.write(OutFilename, path=EventName+"/AntennaP2PInfo", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
 
+def SaveAntennaFluenceInfo(OutFilename,AntennaFluenceInfo,EventName):
+   #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
+   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
+   AntennaFluenceInfo.write(OutFilename, path=EventName+"/AntennaFluenceInfo", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
+
+
 def SaveShowerSimInfo(OutFilename,ShowerSimInfo,EventName):
    #TODO: Handle error when OutFilename already contains EventName/ShowerSimInfo
    ShowerSimInfo.write(OutFilename, path=EventName+"/ShowerSimInfo", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
@@ -223,6 +229,13 @@ def GetAntennaP2PInfo(InputFilename,EventName,compute=False):
 
    return AntennaInfo
 
+def GetAntennaFluenceInfo(InputFilename,EventName,compute=False):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/AntennaInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   
+   AntennaFluenceInfo=Table.read(InputFilename, path=EventName+"/AntennaFluenceInfo")
+   return AntennaFluenceInfo  
 
 def GetAntennaEfield(InputFilename,EventName,AntennaName,OutputFormat="numpy"):
    #TODO: Handle error when "EventName" does not exists
@@ -881,6 +894,225 @@ def GetP2Py_filteredFromAntennaP2PInfo(AntennaP2PInfo):
 def GetP2Pz_filteredFromAntennaP2PInfo(AntennaP2PInfo):
    #TODO: Handle errors
    return AntennaP2PInfo["P2Pz_filtered"]
+
+
+####################################################################################################################################################################################
+#AntennaFluenceInfo Creators
+####################################################################################################################################################################################
+def CreateAntennaFluenceInfo(IDs, AntennaFluenceInfoMeta, HilbertFluenceE=None,HilbertFluenceV=None,HilbertFluenceFV=None,HilbertFluenceTimeE=None,HilbertFluenceTimeV=None,HilbertFluenceTimeFV=None,HilbertBkgE=None,HilbertBkgV=None,HilbertBkgFV=None):
+   #TODO: Handle errors
+    a4=Column(data=IDs,name='ID')
+    data=[a4]
+
+    if HilbertFluenceE is not None:
+      HilbertFluenceE32=HilbertFluenceE.astype('f4') #reduce the data type to float 32    
+      g4=Column(data=HilbertFluenceE32[0,:],name='Fluence_efield') #Fluence Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertFluenceE32[1,:],name='Fluencex_efield') #Fluence Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertFluenceE32[2,:],name='Fluencey_efield') #Fluence Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertFluenceE32[3,:],name='Fluencez_efield') #Fluence Value of the electric field
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(HilbertFluenceE=True)
+           
+    if HilbertFluenceTimeE is not None:
+      HilbertFluenceTimeE32=HilbertFluenceTimeE.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertFluenceTimeE32,name='HilbertFluenceTimeE',unit=u.ns) #
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(HilbertFluenceTimeE=True)
+      
+    if HilbertBkgE is not None:
+      HilbertBkgE32=HilbertBkgE.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertBkgE32[0,:],name='Bkg_efield') #bkg Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertBkgE32[1,:],name='Bkgx_efield') #bkg Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertBkgE32[2,:],name='Bkgy_efield') #Bkg Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertBkgE32[3,:],name='Bkgz_efield') #Bkg Value of the electric field
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(HilbertBkgE=True)
+      
+    if HilbertFluenceV is not None:
+      HilbertFluenceV32=HilbertFluenceV.astype('f4') #reduce the data type to float 32    
+      g4=Column(data=HilbertFluenceV32[0,:],name='Fluence_voltage') #Fluence Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertFluenceV32[1,:],name='Fluencex_voltage') #Fluence Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertFluenceV32[2,:],name='Fluencey_voltage') #Fluence Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertFluenceV32[3,:],name='Fluencez_voltage') #Fluence Value of the electric field
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(HilbertFluenceV=True)
+           
+    if HilbertFluenceTimeV is not None:
+      HilbertFluenceTimeV32=HilbertFluenceTimeV.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertFluenceTimeV32,name='HilbertFluenceTimeV',unit=u.ns) #
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(HilbertFluenceTimeV=True)
+      
+    if HilbertBkgV is not None:
+      HilbertBkgV32=HilbertBkgV.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertBkgV32[0,:],name='Bkg_voltage') #bkg Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertBkgV32[1,:],name='Bkgx_voltage') #bkg Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertBkgV32[2,:],name='Bkgy_voltage') #Bkg Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertBkgV32[3,:],name='Bkgz_voltage') #Bkg Value of the electric field
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(HilbertBkgV=True)      
+      
+    if HilbertFluenceFV is not None:
+      HilbertFluenceFV32=HilbertFluenceFV.astype('f4') #reduce the data type to float 32    
+      g4=Column(data=HilbertFluenceFV32[0,:],name='Fluence_filtered') #Fluence Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertFluenceFV32[1,:],name='Fluencex_filtered') #Fluence Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertFluenceFV32[2,:],name='Fluencey_filtered') #Fluence Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertFluenceFV32[3,:],name='Fluencez_filtered') #Fluence Value of the electric field
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(HilbertFluenceFV=True)
+           
+    if HilbertFluenceTimeFV is not None:
+      HilbertFluenceTimeFV32=HilbertFluenceTimeFV.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertFluenceTimeFV32,name='HilbertFluenceTimeFV',unit=u.ns) #
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(HilbertFluenceTimeFV=True)
+      
+    if HilbertBkgFV is not None:
+      HilbertBkgFV32=HilbertBkgFV.astype('f4') #reduce the data type to float 32
+      g4=Column(data=HilbertBkgFV32[0,:],name='Bkg_filtered') #bkg Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertBkgFV32[1,:],name='Bkgx_filtered') #bkg Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertBkgFV32[2,:],name='Bkgy_filtered') #Bkg Value of the electric field
+      data.append(g4)
+      g4=Column(data=HilbertBkgFV32[3,:],name='Bkgz_filtered') #Bkg Value of the electric field
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(HilbertBkgV=True) 
+    AstropyTable = Table(data=data,meta=AntennaFluenceInfoMeta)
+    return AstropyTable       
+
+   
+####################################################################################################################################################################################
+#AntennaFluenceInfo Getters
+####################################################################################################################################################################################
+
+def GetFluence_efield(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluence_efield"]
+
+def GetFluencex_efield(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluencex_efield"]
+   
+def GetFluencey_efield(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluencey_efield"]
+   
+def GetFluencez_efield(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluencez_efield"]
+   
+def GetFluenceTimeIndex(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["HilbertFluenceTimeE"]
+
+def GetBkg_efield(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkg_efield"] 
+
+def GetBkgx_efield(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkgx_efield"]    
+
+def GetBkgy_efield(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkgy_efield"] 
+
+def GetBkgz_efield(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkgz_efield"] 
+   
+   
+   
+def GetFluence_voltage(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluence_voltage"]
+
+def GetFluencex_voltage(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluencex_voltage"]
+   
+def GetFluencey_voltage(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluencey_voltage"]
+   
+def GetFluencez_voltage(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluencez_voltage"]
+   
+def GetFluenceTimeIndex(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["HilbertFluenceTimeV"]
+
+def GetBkg_voltage(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkg_voltage"] 
+
+def GetBkgx_voltage(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkgx_voltage"]    
+
+def GetBkgy_voltage(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkgy_voltage"] 
+
+def GetBkgz_voltage(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkgz_voltage"]   
+   
+     
+def GetFluence_filtered(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluence_filtered"]
+
+def GetFluencex_filtered(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluencex_filtered"]
+   
+def GetFluencey_filtered(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluencey_filtered"]
+   
+def GetFluencez_filtered(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Fluencez_filtered"]
+   
+def GetFluenceTimeIndex(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["HilbertFluenceTimeFV"]
+
+def GetBkg_filtered(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkg_filtered"] 
+
+def GetBkgx_filtered(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkgx_filtered"]    
+
+def GetBkgy_filtered(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkgy_filtered"] 
+
+def GetBkgz_filtered(AntennaFluenceInfo):
+   #TODO: Handle errors
+   return AntennaFluenceInfo["Bkgz_filtered"]
+   
+
 ########################################################################################################################
 # Create and Save traces
 ########################################################################################################################
@@ -977,8 +1209,21 @@ def SaveFilteredVoltageTable(outputfilename,EventName,antennaID,filteredvoltage)
 # Other Stuff to see how things could be done
 #######################################################################################################################################################################
 
-#TODO: Split this in 2 functions: GetP2PFromTrace(Trace) to get p2px,p2py,p2pz and p2ptotal (this is not an hdf5io function)
+def GetP2PFromTrace(trace):
+
+      p2p= np.amax(trace,axis=0)-np.amin(trace,axis=0)
+      p2p_Ex= p2p[1]
+      p2p_Ey= p2p[2]
+      p2p_Ez= p2p[3]
+
+      amplitude = np.sqrt(trace[:,1]**2. + trace[:,2]**2. + trace[:,3]**2.) # combined components
+
+      p2p_total= max(amplitude)-min(amplitude)
+
+      return p2p_Ex,p2p_Ey,p2p_Ez,p2p_total
+
 #      used in GetEventP2P(InputFilename, CurrentEventName) to get them for all the antennas in the event
+
 def get_p2p_hdf5(InputFilename,antennamax='All',antennamin=0,usetrace='efield'):
 
     #TODO: Handle Errors
@@ -1027,22 +1272,84 @@ def get_p2p_hdf5(InputFilename,antennamax='All',antennamin=0,usetrace='efield'):
       else:
         print('You must specify either efield, voltage or filteredvoltage, bailing out')
 
-      p2p= np.amax(trace,axis=0)-np.amin(trace,axis=0)
-      p2p_Ex[i-antennamin]= p2p[1]
-      p2p_Ey[i-antennamin]= p2p[2]
-      p2p_Ez[i-antennamin]= p2p[3]
-
-      amplitude = np.sqrt(trace[:,1]**2. + trace[:,2]**2. + trace[:,3]**2.) # combined components
-
-      p2p_total[i-antennamin] = max(amplitude)-min(amplitude)
+      p2p_Ex[i-antennamin],p2p_Ey[i-antennamin],p2p_Ez[i-antennamin],p2p_total[i-antennamin] = GetP2PFromTrace(trace)
 
     p2pE = np.stack((p2p_Ex, p2p_Ey, p2p_Ez, p2p_total), axis=0)
     return p2pE
 
+def GetHilbertFromTrace(trace):
 
-#TODO: Split this in 2 functions: GetHilbertFromTrace(Trace) to get hilbert amplitude and time (this is not an hdf5io function)
+    from scipy.signal import hilbert
+    #now, this is not doing exactly what i was expecting (the hilbert of each component separately. When i plot it, it seems to be mixing channels up)
+    #however, it does get the maximum of the modulus of the signal (but i dont understand whats really going on!)
+    hilbert_trace=hilbert(trace[:,1:4])
+    hilbert_amp = np.abs(hilbert_trace) 												                     #enveloppe de hilbert x, y, z channels
+    peakamplitude=max([max(hilbert_amp[:,0]), max(hilbert_amp[:,1]), max(hilbert_amp[:,2])]) #find best peakamp for the 3 channels
+    peakamplitudelocation=np.where(hilbert_amp == peakamplitude)
+      #this is to assure that there is a maximum amplitude, and that its unique, and that it could be found
+    if(peakamplitude!=0.0 and np.shape(peakamplitudelocation)==(2,1)):
+      peaktime=trace[peakamplitudelocation[0],0]                # get the time of the peak amplitude
+    else:
+      peaktime=-1e20
+      peakamplitudelocation=-1
+      #
+    
+    DISPLAY=False
+    if DISPLAY :
+        print("amplitude")  
+        print(peakamplitude)
+        print("time")
+        print(peaktime[0])
+        print("location")
+        print(peakamplitudelocation[0][0])  
+    
+        hilbert_trace_x=hilbert(trace[:,1])
+        hilbert_amp_x = np.abs(hilbert_trace_x)
+        hilbert_trace_y=hilbert(trace[:,2])
+        hilbert_amp_y = np.abs(hilbert_trace_y)
+        hilbert_trace_z=hilbert(trace[:,3])
+        hilbert_amp_z = np.abs(hilbert_trace_z)
+
+        hilbert_amp2=np.zeros(np.shape(trace[:,1:4]))
+        hilbert_amp2[:,0]=hilbert_amp_x
+        hilbert_amp2[:,1]=hilbert_amp_y
+        hilbert_amp2[:,2]=hilbert_amp_z
+        #peakamplitude[i-antennamin]=max([max(hilbert_amp2[:,0]), max(hilbert_amp2[:,1]), max(hilbert_amp2[:,2])]) #find best peakamp for the 3 channels
+        #peaktime[i-antennamin]=trace[np.where(hilbert_amp2 == peakamplitude[i-antennamin])[0],0]                # get the time of the peak amplitude
+
+        fig1 = plt.figure(1,figsize=(7,5), dpi=100, facecolor='w', edgecolor='k')
+
+        ax1=fig1.add_subplot(221)
+        plt.plot(trace[:,0], hilbert_amp[:,0], label = 'Hilbert env channel x')
+        plt.plot(trace[:,0], trace[:,1], label = 'channel x')
+        plt.plot(trace[:,0], hilbert_amp_x, label = 'Hilbertx env channel x')
+
+        plt.legend(loc = 'best')
+
+        ax1=fig1.add_subplot(222)
+        plt.plot(trace[:,0], hilbert_amp[:,1], label = 'Hilbert env channel y')
+        plt.plot(trace[:,0], trace[:,2], label = 'channel y')
+        plt.plot(trace[:,0], hilbert_amp_y, label = 'Hilbertx env channel y')
+        plt.legend(loc = 'best')
+
+        ax1=fig1.add_subplot(223)
+        plt.plot(trace[:,0], hilbert_amp[:,2], label = 'Hilbert env channel z')
+        plt.plot(trace[:,0], trace[:,3], label = 'channel z')
+        plt.plot(trace[:,0], hilbert_amp_z, label = 'Hilbertx env channel z')
+        plt.legend(loc = 'best')
+
+        ax1=fig1.add_subplot(224)
+        plt.plot(trace[:,0], np.sqrt(trace[:,1]**2 + trace[:,2]**2 + trace[:,3]**2), label = 'modulus signal')
+        plt.axvline(peaktime, color='r', label = 'Timepeak')
+        plt.xlabel('Time (ns)')
+        plt.ylabel('Amplitude (muV) (s)')
+        plt.legend(loc = 'best')
+        plt.show()    
+    
+    return peakamplitude,peaktime[0],peakamplitudelocation[0][0]    
+
 #      used in GetEventHilbert(InputFilename, CurrentEventName) to get them for all the antennas in the event
-def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, usetrace="efield", DISPLAY=False) :
+def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, usetrace="efield", DISPLAY=False, outputlocation=False) :
 #adapted from Valentin Decoene
     #TODO: Handle Errors
     '''
@@ -1071,6 +1378,7 @@ def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, use
 
     peaktime= np.zeros(1+antennamax-antennamin)
     peakamplitude= np.zeros(1+antennamax-antennamin)
+    peakamplitudelocation=np.zeros(1+antennamax-antennamin) 
 
     for i in range(antennamin,antennamax+1):
       AntennaID=GetAntennaID(CurrentAntennaInfo,i)
@@ -1082,71 +1390,15 @@ def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, use
         trace=GetAntennaFilteredVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
       else:
         print('You must specify either efield, voltage or filteredvoltage, bailing out')
-
-      from scipy.signal import hilbert
-      #now, this is not doing exactly what i was expecting (the hilbert of each component separately. When i plot it, it seems to be mixing channels up)
-      #however, it does get the maximum of the modulus of the signal (but i dont understand whats really going on!)
-      hilbert_trace=hilbert(trace[:,1:4])
-      hilbert_amp = np.abs(hilbert_trace) 												                     #enveloppe de hilbert x, y, z channels
-      peakamplitude[i-antennamin]=max([max(hilbert_amp[:,0]), max(hilbert_amp[:,1]), max(hilbert_amp[:,2])]) #find best peakamp for the 3 channels
-      peakamplitudelocation=np.where(hilbert_amp == peakamplitude[i-antennamin])
-      #this is to assure that there is a maximum amplitude, at that its unique, and that it could be found
-      if(peakamplitude[i-antennamin]!=0.0 and np.shape(peakamplitudelocation)==(2,1)):
-        peaktime[i-antennamin]=trace[peakamplitudelocation[0],0]                # get the time of the peak amplitude
-      else:
-        peaktime[i-antennamin]=-1e20
-
-      #PLOT
-      DISPLAY=False
-      if DISPLAY :
-        print(peakamplitude[i-antennamin])
-        print('peaktime = ',peaktime[i-antennamin])
-
-        hilbert_trace_x=hilbert(trace[:,1])
-        hilbert_amp_x = np.abs(hilbert_trace_x)
-        hilbert_trace_y=hilbert(trace[:,2])
-        hilbert_amp_y = np.abs(hilbert_trace_y)
-        hilbert_trace_z=hilbert(trace[:,3])
-        hilbert_amp_z = np.abs(hilbert_trace_z)
-
-        hilbert_amp2=np.zeros(np.shape(trace[:,1:4]))
-        hilbert_amp2[:,0]=hilbert_amp_x
-        hilbert_amp2[:,1]=hilbert_amp_y
-        hilbert_amp2[:,2]=hilbert_amp_z
-        #peakamplitude[i-antennamin]=max([max(hilbert_amp2[:,0]), max(hilbert_amp2[:,1]), max(hilbert_amp2[:,2])]) #find best peakamp for the 3 channels
-        #peaktime[i-antennamin]=trace[np.where(hilbert_amp2 == peakamplitude[i-antennamin])[0],0]                # get the time of the peak amplitude
+        return -1
+     # 
+      peakamplitude[i-antennamin],peaktime[i-antennamin],peakamplitudelocation[i-antennamin]=GetHilbertFromTrace(trace)     
 
 
-        fig1 = plt.figure(1,figsize=(7,5), dpi=100, facecolor='w', edgecolor='k')
-
-        ax1=fig1.add_subplot(221)
-        plt.plot(trace[:,0], hilbert_amp[:,0], label = 'Hilbert env channel x')
-        plt.plot(trace[:,0], trace[:,1], label = 'channel x')
-        plt.plot(trace[:,0], hilbert_amp_x, label = 'Hilbertx env channel x')
-
-        plt.legend(loc = 'best')
-
-        ax1=fig1.add_subplot(222)
-        plt.plot(trace[:,0], hilbert_amp[:,1], label = 'Hilbert env channel y')
-        plt.plot(trace[:,0], trace[:,2], label = 'channel y')
-        plt.plot(trace[:,0], hilbert_amp_y, label = 'Hilbertx env channel y')
-        plt.legend(loc = 'best')
-
-        ax1=fig1.add_subplot(223)
-        plt.plot(trace[:,0], hilbert_amp[:,2], label = 'Hilbert env channel z')
-        plt.plot(trace[:,0], trace[:,3], label = 'channel z')
-        plt.plot(trace[:,0], hilbert_amp_z, label = 'Hilbertx env channel z')
-        plt.legend(loc = 'best')
-
-        ax1=fig1.add_subplot(224)
-        plt.plot(trace[:,0], np.sqrt(trace[:,1]**2 + trace[:,2]**2 + trace[:,3]**2), label = 'modulus signal')
-        plt.axvline(peaktime[i-antennamin], color='r', label = 'Timepeak')
-        plt.xlabel('Time (ns)')
-        plt.ylabel('Amplitude (muV) (s)')
-        plt.legend(loc = 'best')
-        plt.show()
-
-    return peaktime, peakamplitude
+    if(outputlocation):
+      return peaktime, peakamplitude , peaklocation
+    else:
+      return peaktime, peakamplitude
 
 
 
