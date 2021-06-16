@@ -1329,20 +1329,23 @@ def GetLateralTable(Path,TableNumber,Density=True,Precision="Double"):
 
 
 
-#this gets the effective refraction index from poitn R0 to xant,yant,groundz (default to the core position), all in meters, but kr in 1/km
+#this gets the effective refraction index from poitn R0 to xant,yant,zant (default to the core position), all in meters, but kr in 1/km
 #ns is the REFRACIVITY AR SEA LEVEL, kr is the scale height in km.
 import numpy as np
-def GetEffectiveRefractionIndex(x0,y0,z0,ns,kr,groundz,xant=0,yant=0,stepsize = 20000):
+#NOTE: Use the GetZHSEffectiveactionIndex below to get exactly the same results than in zhaires
+# ns= refractivity at sea levele
+# kr= scale height
 
+def GetEffectiveRefractionIndex(x0,y0,z0,ns=325,kr=-0.128,zant=0,xant=0,yant=0,stepsize = 20000): #NOTE THAT THE ORDER OF ANTENNA POSITIONS IS ZANT,XANT,YANT (historic compatibility reasons)
         rearth=6370949.0
         R02=x0*x0+y0*y0  #notar que se usa R02, se puede ahorrar el producto y la raiz cuadrada
         h0=(np.sqrt((z0+rearth)*(z0+rearth) + R02 ) - rearth)/1.E3 #altitude of emission, in km
 
         rh0 = ns*np.exp(kr*h0) #refractivity at emission
         n_h0=1.E0+1.E-6*rh0 #n at emission
-        #print("n_h0",n_h0,ns,kr,x0,y0,z0,h0,rh0)
+#        print("n_h0",n_h0,ns,kr,x0,y0,z0,h0,rh0)
 
-        hd=(groundz)/1.E3 #detector altitude
+        hd=(zant)/1.E3 #detector altitude
 
 #       Vector from detector to average point on track. Making the integral in this way better guaranties the continuity
 #       since the choping of the path will be always the same as you go farther away. If you start at your starting point, for a given geometry,
@@ -1350,7 +1353,7 @@ def GetEffectiveRefractionIndex(x0,y0,z0,ns,kr,groundz,xant=0,yant=0,stepsize = 
 
         ux = x0-xant
         uy = y0-yant         #the antenna position, considered to be at the core
-        uz = z0-groundz
+        uz = z0-zant
 
         Rd=np.sqrt(ux*ux + uy*uy)
         kx=ux/Rd
@@ -1363,8 +1366,10 @@ def GetEffectiveRefractionIndex(x0,y0,z0,ns,kr,groundz,xant=0,yant=0,stepsize = 
 
         currpx=0+xant
         currpy=0+yant    #!current point (1st antenna position)
-        currpz=groundz
+        currpz=zant
         currh=hd
+        
+        print(Rd)
 
         while(Rd > stepsize): #if distance projected on the xy plane is more than 10km
           nint=nint+1
@@ -1401,6 +1406,81 @@ def GetEffectiveRefractionIndex(x0,y0,z0,ns,kr,groundz,xant=0,yant=0,stepsize = 
         avn=ns*sum/nint
         n_eff=1.E0+1.E-6*avn #average (effective) n
         return n_eff
+
+#This is exactly what is computed in ZHAires
+def GetZHSEffectiveRefractionIndex(x0,y0,z0,xant=0,yant=0,zant=0,ns=325,kr=-0.1218,stepsize = 20000):
+#      rearth=6371007.0 #new aires
+      rearth=6370949.0 #19.4.0
+#     Variable n integral calculation ///////////////////
+      R02=x0*x0+y0*y0  #!notar que se usa R02, se puede ahorrar el producto y la raiz cuadrada (entro con injz-zXmax -> injz-z0=zXmax
+      h0=(np.sqrt( (z0+rearth)*(z0+rearth) + R02 ) - rearth)/1E3    #!altitude of emission
+
+      rh0=ns*np.exp(kr*h0) #!refractivity at emission (this
+      n_h0=1+1E-6*rh0 #!n at emission
+#        write(*,*) "n_h0",n_h0,ns,kr,x0,y0,injz-z0,h0,rh0
+      modr=np.sqrt(R02)
+
+#      print("ZHS n_h0",n_h0,ns,kr,x0,y0,z0,h0,rh0)
+        
+      if(modr > 1000): #! if inclined shower and point more than 20km from core. Using the core as reference distance is dangerous, its invalid in upgoing showers
+
+#         Vector from average point of track to observer.
+          ux = xant-x0
+          uy = yant-y0
+          uz = zant-z0
+
+#         divided in nint pieces shorter than 10km
+          nint=int((modr/stepsize)+1)
+          kx=ux/nint
+          ky=uy/nint       #k is vector from one point to the next
+          kz=uz/nint
+#
+          currpx=x0
+          currpy=y0        #current point (1st is emission point)
+          currpz=z0
+          currh=h0
+#
+          sum=0
+          for iii in range(0,nint):
+            nextpx=currpx+kx
+            nextpy=currpy+ky #!this is the "next" point
+            nextpz=currpz+kz
+            nextR2=nextpx*nextpx + nextpy*nextpy
+            nexth=(np.sqrt((nextpz+rearth)*(nextpz+rearth) + nextR2) - rearth)/1E3
+#c
+            if(np.abs(nexth-currh) > 1E-10  ):
+              sum=sum+(np.exp(kr*nexth)-np.exp(kr*currh))/(kr*(nexth-currh))
+            else:
+              sum=sum+np.exp(kr*currh)
+#            endif
+#c
+            currpx=nextpx
+            currpy=nextpy
+            currpz=nextpz  #!Set new "current" point
+            currh=nexth
+#c
+          avn=ns*sum/nint
+#          print*,"avn:",avn
+          n_eff=1+1E-6*avn #!average (effective) n
+#c
+      else:
+#c         withouth integral
+          hd=zant/1E3 #!detector altitude(flat earth!)
+#
+          if(np.abs(hd-h0) > 1E-10):
+            avn=(ns/(kr*(hd-h0)))*(np.exp(kr*hd)-np.exp(kr*h0))
+#            print*,"avn2:",avn
+          else:
+            avn=ns*np.exp(kr*h0)
+#           print*,"avn3:",avn
+#            print *,"Effective n: h0=hd"
+#          endif
+          n_eff=1+1E-6*avn #!average (effective) n
+#        endif
+#c     ///////////////////////////////////////////////////
+      return n_eff
+#      end
+
 
 
 def ReadAiresSry(sry_file,outmode="N/A"):

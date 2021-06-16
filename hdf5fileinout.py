@@ -207,13 +207,13 @@ def GetAntennaP2PInfo(InputFilename,EventName,compute=False):
      if(compute==True or compute=="Save"):
         print("Computing P2P for "+str(InputFilename))
 
-        OutAntennaInfo=GetAntennaInfo(InputFilename,CurrentEventName)
-        OutIDs=hdf5io.GetAntIDFromAntennaInfo(OutAntennaInfo)
+        OutAntennaInfo=GetAntennaInfo(InputFilename,EventName)
+        OutIDs=GetAntIDFromAntennaInfo(OutAntennaInfo)
 
         p2pE=get_p2p_hdf5(InputFilename,usetrace='efield')
         p2pV=get_p2p_hdf5(InputFilename,usetrace='voltage')
         p2pFV=get_p2p_hdf5(InputFilename,usetrace='filteredvoltage')
-
+         
         peaktimeE, peakE=get_peak_time_hilbert_hdf5(InputFilename,usetrace='efield')
         peaktimeV, peakV=get_peak_time_hilbert_hdf5(InputFilename,usetrace='voltage')
         peaktimeFV, peakFV=get_peak_time_hilbert_hdf5(InputFilename,usetrace='filteredvoltage')
@@ -222,7 +222,7 @@ def GetAntennaP2PInfo(InputFilename,EventName,compute=False):
         AntennaP2PInfo=CreateAntennaP2PInfo(OutIDs, DesiredAntennaInfoMeta, P2Pefield=p2pE,P2Pvoltage=p2pV,P2Pfiltered=p2pFV,HilbertPeakE=peakE,HilbertPeakV=peakV,HilbertPeakFV=peakFV,HilbertPeakTimeE=peaktimeE,HilbertPeakTimeV=peaktimeV,HilbertPeakTimeFV=peaktimeFV)
 
         if(compute=="Save"):
-          SaveAntennaP2PInfo(InputFilename,AntennaP2PInfo,CurrentEventName)
+          SaveAntennaP2PInfo(InputFilename,AntennaP2PInfo,EventName)
      else:
        print("AntennaP2PInfo not found in ",InputFilename," for ",EventName)
        AntennaInfo=0
@@ -899,7 +899,7 @@ def GetP2Pz_filteredFromAntennaP2PInfo(AntennaP2PInfo):
 ####################################################################################################################################################################################
 #AntennaFluenceInfo Creators
 ####################################################################################################################################################################################
-def CreateAntennaFluenceInfo(IDs, AntennaFluenceInfoMeta, HilbertFluenceE=None,HilbertFluenceV=None,HilbertFluenceFV=None,HilbertFluenceTimeE=None,HilbertFluenceTimeV=None,HilbertFluenceTimeFV=None,HilbertBkgE=None,HilbertBkgV=None,HilbertBkgFV=None):
+def CreateAntennaFluenceInfo(IDs, AntennaFluenceInfoMeta, HilbertFluenceE=None,HilbertFluenceV=None,HilbertFluenceFV=None,HilbertFluenceTimeE=None,HilbertFluenceTimeV=None,HilbertFluenceTimeFV=None,HilbertBkgE=None,HilbertBkgV=None,HilbertBkgFV=None,AmplitudeE=None,AmplitudeV=None,AmplitudeFV=None):
    #TODO: Handle errors
     a4=Column(data=IDs,name='ID')
     data=[a4]
@@ -934,6 +934,19 @@ def CreateAntennaFluenceInfo(IDs, AntennaFluenceInfoMeta, HilbertFluenceE=None,H
       data.append(g4)
       AntennaFluenceInfoMeta.update(HilbertBkgE=True)
       
+    if AmplitudeE is not None:
+      AmplitudeE32=AmplitudeE.astype('f4') #reduce the data type to float 32  
+      g4=Column(data=AmplitudeE32[0,:],name='Amplitude_efield') # Value of the electric field
+      data.append(g4)
+      g4=Column(data=AmplitudeE32[1,:],name='Amplitudex_efield') # Value of the electric field
+      data.append(g4)
+      g4=Column(data=AmplitudeE32[2,:],name='Amplitudey_efield') # Value of the electric field
+      data.append(g4)
+      g4=Column(data=AmplitudeE32[3,:],name='Amplitudez_efield') # Value of the electric field
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(AmplitudeE=True)
+      
+            
     if HilbertFluenceV is not None:
       HilbertFluenceV32=HilbertFluenceV.astype('f4') #reduce the data type to float 32    
       g4=Column(data=HilbertFluenceV32[0,:],name='Fluence_voltage') #Fluence Value of the electric field
@@ -962,7 +975,21 @@ def CreateAntennaFluenceInfo(IDs, AntennaFluenceInfoMeta, HilbertFluenceE=None,H
       data.append(g4)
       g4=Column(data=HilbertBkgV32[3,:],name='Bkgz_voltage') #Bkg Value of the electric field
       data.append(g4)
-      AntennaFluenceInfoMeta.update(HilbertBkgV=True)      
+      AntennaFluenceInfoMeta.update(HilbertBkgV=True) 
+      
+    if AmplitudeV is not None:
+      AmplitudeV32=AmplitudeV.astype('f4') #reduce the data type to float 32  
+      g4=Column(data=AmplitudeV32[0,:],name='Amplitude_voltage') # Value of the electric field
+      data.append(g4)
+      g4=Column(data=AmplitudeV32[1,:],name='Amplitudex_voltage') # Value of the electric field
+      data.append(g4)
+      g4=Column(data=AmplitudeV32[2,:],name='Amplitudey_voltage') # Value of the electric field
+      data.append(g4)
+      g4=Column(data=AmplitudeV32[3,:],name='Amplitudez_voltage') # Value of the electric field
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(AmplitudeV=True)      
+      
+           
       
     if HilbertFluenceFV is not None:
       HilbertFluenceFV32=HilbertFluenceFV.astype('f4') #reduce the data type to float 32    
@@ -992,7 +1019,22 @@ def CreateAntennaFluenceInfo(IDs, AntennaFluenceInfoMeta, HilbertFluenceE=None,H
       data.append(g4)
       g4=Column(data=HilbertBkgFV32[3,:],name='Bkgz_filtered') #Bkg Value of the electric field
       data.append(g4)
-      AntennaFluenceInfoMeta.update(HilbertBkgV=True) 
+      AntennaFluenceInfoMeta.update(HilbertBkgV=True)
+      
+    if AmplitudeFV is not None:
+      AmplitudeFV32=AmplitudeFV.astype('f4') #reduce the data type to float 32  
+      g4=Column(data=AmplitudeFV32[0,:],name='Amplitude_filtered') # Value of the electric field
+      data.append(g4)
+      g4=Column(data=AmplitudeFV32[1,:],name='Amplitudex_filtered') # Value of the electric field
+      data.append(g4)
+      g4=Column(data=AmplitudeFV32[2,:],name='Amplitudey_filtered') # Value of the electric field
+      data.append(g4)
+      g4=Column(data=AmplitudeFV32[3,:],name='Amplitudez_filtered') # Value of the electric field
+      data.append(g4)
+      AntennaFluenceInfoMeta.update(AmplitudeFV=True)      
+      
+      
+       
     AstropyTable = Table(data=data,meta=AntennaFluenceInfoMeta)
     return AstropyTable       
 
@@ -1198,6 +1240,7 @@ def CreateVoltageTable(voltage, EventName, EventNumber, AntennaID, AntennaNumber
 def SaveVoltageTable(outputfilename,EventName,antennaID,voltage):
    #TODO: HAndle error when "voltage" already exists
    #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
+   print("about to write",outputfilename,EventName+"/AntennaTraces/"+antennaID+"/voltage")
    voltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/voltage", format="hdf5", append=True, overwrite=True,compression=hdf5io_compression,serialize_meta=True)
 
 def SaveFilteredVoltageTable(outputfilename,EventName,antennaID,filteredvoltage):

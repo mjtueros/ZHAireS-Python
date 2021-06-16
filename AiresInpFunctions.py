@@ -404,8 +404,8 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
 
     print("Create stepmode",stepmode)
 
-    #Concentrated points (up to 8 time th_ch:
-    concentrated=[0.25,0.5,0.625,0.75,0.875,1,1.125,1.25,1.375,1.5,1.75,2,2.25,2.5,3,4,5,6,7,8]
+    #Concentrated points (up to 8 time cone_ang:
+    concentrated=[0.25,0.5,0.625,0.75,0.875,1,1.125,1.25,1.375,1.5,1.75,2,2.25,2.5,3,4,5,6,7,8] #consider removing 6,7,8 and putting 3.5,4.5,5.5
 
     # mountain slope
     alpha = float(alpha)*degtorad
