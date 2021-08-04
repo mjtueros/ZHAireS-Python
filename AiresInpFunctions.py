@@ -388,7 +388,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
   #projection: 3 projection modes are implemented: "geometric" wich projects the starshape paralel to the shower axis. This gives an elipse centered on 0,0
   #                                                "conical" which projects the starshape through a cone with given vertex. This gives an elipse with 0,0 in the focus. This projection conserves the angle of the antenna with the shower direction
   #                                                "A distance in m", which will then make the starshape perpendicular to the shower axis and put it at the stated distance from the cone vertex
-  #vspread: random (uniformly distributed) spread between (-vspread and + vspread) in Z coordinate of the random check antennas, to test the effect of topography
+  #vspread: random (uniformly distributed) spread between (0 and + vspread) in Z coordinate of the random check antennas, to test the effect of topography
   #
   # tmin and tmax: Both to "Auto" will call a parameterization that works well close to the cherenkov angle, but is not that good if you are to far away to the side.
   #                else, you need to provide a value (in ns) for each. Both are relative to t0, the expected time of the peak, so something like tmin -250, tmax 750 should work
@@ -404,9 +404,9 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
 
     print("Create stepmode",stepmode)
 
-    #Concentrated points (up to 8 time cone_ang:
-    concentrated=[0.25,0.5,0.625,0.75,0.875,1,1.125,1.25,1.375,1.5,1.75,2,2.25,2.5,3,4,5,6,7,8] #consider removing 6,7,8 and putting 3.5,4.5,5.5
-
+    #Concentrated points (up to 4) times cone_ang:
+    concentrated=[0.25,0.5,0.625,0.75,0.8125,0.875,0.9375,1,1.0625,1.125,1.25,1.375,1.5,1.75,2,2.25,2.5,3,3.5,4] #Think about how to avoid the problem of quasi-horizontal rays 
+    
     # mountain slope
     alpha = float(alpha)*degtorad
 
@@ -573,7 +573,7 @@ def CreateAiresStarShapeInp(zenith, azimuth, alpha, az_slope, cone_vertex=100000
       xyz3[nant*8+i]=(1-u)*XmaxPosition+u*xyz0
 
       if(vspread>0):
-        spread=random.uniform(-vspread,vspread)
+        spread=random.uniform(0,vspread) #desde 0 para que no de por debajo del ground
         if((projection=="geometric" or projection=="Geometric" or projection=="Geometrical" or projection=="geometrical")):
           xyz[nant*8+i]+=v*spread
           xyz3[nant*8+i]+=v*spread

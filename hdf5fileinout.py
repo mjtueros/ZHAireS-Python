@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib as mpl
 #mpl.use('Agg')
 import matplotlib.pyplot as plt
-
+import h5py
 
 ################################################################################################################################
 #### by M. Tueros. Shared with the Wineware licence. Support and feature requests accepted only accompanied by bottles of wine.
@@ -594,7 +594,7 @@ def GetRefractionIndexModelParameters(SignalSimInfo):
 #AntennaInfo Creators
 ####################################################################################################################################################################################
 
-def CreatAntennaInfoMeta(RunName,EventName,VoltageSimulator="N/A",AntennaModel="N/A",EnvironmentNoiseSimulator="N/A",ElectronicsSimulator="N/A",ElectronicsNoiseSimulator="N/A"):
+def CreatAntennaInfoMeta(RunName,EventName,VoltageSimulator="N/A",AntennaModel="N/A",EnvironmentNoiseSimulator="N/A",ElectronicsSimulator="N/A",ElectronicsNoiseSimulator="N/A",StatisticalWeight=1):
    #TODO: Handle errors
     AntennaInfoMeta = {
            "RunName":RunName,                                        #For cross checking
@@ -603,7 +603,8 @@ def CreatAntennaInfoMeta(RunName,EventName,VoltageSimulator="N/A",AntennaModel="
            "AntennaModel": AntennaModel,
            "EnvironmentNoiseSimulator": EnvironmentNoiseSimulator,
            "ElectronicsSimulator": ElectronicsSimulator,
-           "ElectronicsNoiseSimulator": ElectronicsNoiseSimulator
+           "ElectronicsNoiseSimulator": ElectronicsNoiseSimulator,
+           "StatisticalWeight":StatisticalWeight
     }
     return AntennaInfoMeta
 
@@ -1190,7 +1191,7 @@ def CreateEfieldTable(efield, EventName, EventNumber, AntennaID, AntennaNumber,F
     b = Column(data=efield.T[1],unit=u.u*u.V/u.meter,name='Ex')
     c = Column(data=efield.T[2],unit=u.u*u.V/u.meter,name='Ey')
     d = Column(data=efield.T[3],unit=u.u*u.V/u.meter,name='Ez')
-    efield_ant = Table(data=(a,b,c,d,), meta=info)
+    efield_ant = Table(data=(a,b,c,d), meta=info)
 
     return efield_ant
 
@@ -1234,19 +1235,211 @@ def CreateVoltageTable(voltage, EventName, EventNumber, AntennaID, AntennaNumber
     b = Column(data=voltage.T[1],unit=u.u*u.V,name='Vx')
     c = Column(data=voltage.T[2],unit=u.u*u.V,name='Vy')
     d = Column(data=voltage.T[3],unit=u.u*u.V,name='Vz')
-    voltage_ant = Table(data=(a,b,c,d,), meta=info)
+    voltage_ant = Table(data=(a,b,c,d), meta=info)
     return voltage_ant
 
 def SaveVoltageTable(outputfilename,EventName,antennaID,voltage):
    #TODO: HAndle error when "voltage" already exists
    #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
-   print("about to write",outputfilename,EventName+"/AntennaTraces/"+antennaID+"/voltage")
+   #print("about to write",outputfilename,EventName+"/AntennaTraces/"+antennaID+"/voltage")
    voltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/voltage", format="hdf5", append=True, overwrite=True,compression=hdf5io_compression,serialize_meta=True)
 
 def SaveFilteredVoltageTable(outputfilename,EventName,antennaID,filteredvoltage):
    #TODO: HAndle error when "voltage" already exists
    #TODO: HAndle error when "outputfilename" is not a file, or a valid file.
    filteredvoltage.write(outputfilename, path=EventName+"/AntennaTraces/"+antennaID+"/filteredvoltage", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression,serialize_meta=True)
+
+
+######################################################################################################################################################################
+# Probed Cores
+######################################################################################################################################################################
+def CreateProbedCoresTable(CoresTested, EventName, EventNumber, SampledArea,info={}):
+    '''
+    Create a table holding all the core positions probed until a candidate was found
+
+    Parameters
+    ---------
+    CoresTested: numpy array
+        the last one should be the good one.
+    EventName: str
+        The Name of the Event, for checking or getting other info on the EventInfo Table
+    EventNumber:int
+        The number of event in the EventInfo table, for fast access
+    info: dict
+        contains meta info
+
+    Returns
+    ---------
+    probed_cores: astropy table
+
+
+    '''
+    info.update({'SampledArea':SampledArea,'EventName': EventName, 'EventNumber': EventNumber})
+
+    a = Column(data=CoresTested.T[0],unit=u.meter,name='CoreX',)
+    b = Column(data=CoresTested.T[1],unit=u.meter,name='CoreY')
+    c = Column(data=CoresTested.T[2],unit=u.meter,name='CoreZ')
+
+    probed_cores = Table(data=(a,b,c), meta=info)
+
+    return probed_cores
+
+def SaveProbedCoresTable(OutFilename,EventName,ProbedCoresTable):
+   #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
+   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
+   ProbedCoresTable.write(OutFilename, path=EventName+"/ProbedCoresTable", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
+   
+def GetProbedCoresTable(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/ProbedCoresTable" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   ProbedCoresTable=Table.read(InputFilename, path=EventName+"/ProbedCoresTable")
+   return ProbedCoresTable
+
+def GetProbedCoresTableMeta(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/ProbedCoresTable" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   ProbedCoresTable=Table.read(InputFilename, path=EventName+"/ProbedCoresTable.__table_column_meta__")
+   return ProbedCoresTable
+
+
+#######################################################################################################################################################################
+# GeometryRecoInfo Creator
+#######################################################################################################################################################################
+#sumarizes the info gathered to start the reconstruction (for consistency checks and the posibility to make it a separate file)
+
+def CreateGeoRecoRefMeta(RunName,EventName):
+    GeoRefMeta = {
+        "RunName":RunName,                             #For cross checking
+        "EventName":EventName,                         #For cross checking        
+    }
+    return GeoRefMeta
+
+
+def CreateGeoRecoRef(EventName, Azimuth, Zenith, Energy, Primary, XmaxDistance, SlantXmax, x_Xmax, y_Xmax, z_Xmax, AntennasNumber, planeref,GeoRecoRefMeta):
+
+    a3=Column(data=[EventName],name='EventName')
+    b3=Column(data=[Azimuth],name='Azimuth')
+    c3=Column(data=[Zenith],name='Zenith')
+    d3=Column(data=[Energy],name='Energy')
+    e3=Column(data=[XmaxDistance],name='XmaxDistance',unit=u.m)
+    f3=Column(data=[[x_Xmax,y_Xmax,z_Xmax]],name='XmaxPosition',unit=u.m)
+    g3=Column(data=[AntennasNumber],name='NAntennas')
+    h3=Column(data=[planeref],name='Planeref')    
+
+    GeoRecoRef = Table(data=(a3,b3,c3,d3,e3,f3,g3,h3),meta=GeoRecoRefMeta)
+
+    return GeoRecoRef
+    
+def SaveGeoRecoRef(OutFilename,EventName,GeoRecoRef):
+   #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
+   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
+   GeoRecoRef.write(OutFilename, path=EventName+"/GeoRecoRef", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
+       
+#######################################################################################################################################################################
+# PlaneRecoInfo Creator
+#######################################################################################################################################################################
+#sumarizes the info gathered to start the reconstruction (for consistency checks and the posibility to make it a separate file)
+
+def CreatePlaneRecoInfoMeta(RunName,EventName):
+    PlaneRecoInfoMeta = {
+        "RunName":RunName,                             #For cross checking
+        "EventName":EventName,                         #For cross checking        
+    }
+    return PlaneRecoInfoMeta
+
+
+def CreatePlaneRecoInfo(IDsRec, PlaneNa, PlaneZenithRec, PlaneZenithError, PlaneAzimuthRec, PlaneAzimuthError, PlaneChi2, PlaneChiSignif,PlaneRecoInfoMeta):
+
+    a3=Column(data=[IDsRec],name='IDsRec')
+    b3=Column(data=[PlaneNa],name='NAntennas')
+    c3=Column(data=[PlaneZenithRec],name='PlaneZenithRec')
+    d3=Column(data=[PlaneZenithError],name='PlaneZenithError')
+    e3=Column(data=[PlaneAzimuthRec],name='PlaneAzimuthRec')
+    f3=Column(data=[PlaneAzimuthError],name='PlaneAzimuthError')
+    g3=Column(data=[PlaneChi2],name='PlaneChi2')
+    h3=Column(data=[PlaneChiSignif],name='PlaneChiSignif')    
+
+    PlaneRecoInfo = Table(data=(a3,b3,c3,d3,e3,f3,g3,h3),meta=PlaneRecoInfoMeta)
+
+    return PlaneRecoInfo
+    
+def SavePlaneRecoInfo(OutFilename,EventName,PlaneRecoInfo):
+   #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
+   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
+   PlaneRecoInfo.write(OutFilename, path=EventName+"/PlaneRecoInfo", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
+
+######################################################################################################################################################################
+# SphereRecoInfo Creator
+#######################################################################################################################################################################
+#sumarizes the info gathered to start the reconstruction (for consistency checks and the posibility to make it a separate file)
+
+def CreateSphereRecoInfoMeta(RunName,EventName):
+    SphereRecoInfoMeta = {
+        "RunName":RunName,                             #For cross checking
+        "EventName":EventName,                         #For cross checking        
+    }
+    return SphereRecoInfoMeta
+
+                          
+def CreateSphereRecoInfo(IDsRec, SphereNa, SphereChi2, SphereChiSignif, XSourceRec, YSourceRec, ZSourceRec, TSourceRec, SphereRecoInfoMeta):
+
+    a3=Column(data=[IDsRec],name='IDsRec')
+    b3=Column(data=[SphereNa],name='NAntennas')
+    c3=Column(data=[[XSourceRec,YSourceRec,ZSourceRec]],name='SphereSource')
+    d3=Column(data=[TSourceRec],name='TSourceRec')
+    e3=Column(data=[SphereChi2],name='SphereChi2')
+    f3=Column(data=[SphereChiSignif],name='SphereChiSignif')    
+
+    SphereRecoInfo = Table(data=(a3,b3,c3,d3,e3,f3),meta=SphereRecoInfoMeta)
+
+    return SphereRecoInfo
+    
+def SaveSphereRecoInfo(OutFilename,EventName,SphereRecoInfo):
+   #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
+   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
+   SphereRecoInfo.write(OutFilename, path=EventName+"/SphereRecoInfo", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
+
+
+######################################################################################################################################################################
+# ADFRecoInfo Creator
+#######################################################################################################################################################################
+#sumarizes the info gathered to start the reconstruction (for consistency checks and the posibility to make it a separate file)
+
+def CreateADFRecoInfoMeta(RunName,EventName):
+    ADFRecoInfoMeta = {
+        "RunName":RunName,                             #For cross checking
+        "EventName":EventName,                         #For cross checking        
+    }
+    return ADFRecoInfoMeta
+
+                          
+def CreateADFRecoInfo(IDsRec, ADFNa, ADFZenithRec, ADFZenithError, ADFAzimuthRec, ADFAzimuthError, ADFChi2, ADFChiSignif, WidthRec, AmpRec, ADFRecoInfoMeta):
+
+    a3=Column(data=[IDsRec],name='IDsRec')
+    b3=Column(data=[ADFNa],name='NAntennas')
+    c3=Column(data=[ADFZenithRec],name='ADFZenithRec')
+    d3=Column(data=[ADFZenithError],name='ADFZenithError')
+    e3=Column(data=[ADFAzimuthRec],name='ADFAzimuthRec')
+    f3=Column(data=[ADFAzimuthError],name='ADFAzimuthError')
+    g3=Column(data=[ADFChi2],name='ADFChi2')
+    h3=Column(data=[ADFChiSignif],name='ADFChiSignif')     
+    i3=Column(data=[WidthRec],name='WidthRec')     
+    j3=Column(data=[AmpRec],name='AmpRec')         
+
+    ADFRecoInfo = Table(data=(a3,b3,c3,d3,e3,f3,g3,h3,i3,j3),meta=ADFRecoInfoMeta)
+
+    return ADFRecoInfo
+    
+def SaveADFRecoInfo(OutFilename,EventName,ADFRecoInfo):
+   #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
+   #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
+   ADFRecoInfo.write(OutFilename, path=EventName+"/ADFRecoInfo", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
+
+
+
+
 
 #######################################################################################################################################################################
 # Other Stuff to see how things could be done
