@@ -911,6 +911,34 @@ def GetAtmosphericModelFromSry(sry_file,outmode="N/A"):
     logging.error("GetAtmosphericModelFromSry:file not found or invalid:"+sry_file)
     raise
     return -1    
+    
+    
+def GetRefractionIndexModelFromSry(sry_file,outmode="N/A"): #for aires 19.04.06
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      for line in datafile:
+        if 'Glasgow-Dale refraction index model' in line:
+          IndexModel="Glasgow-Dale"
+          return IndexModel
+        if 'Exponential refraction index model' in line:  
+          IndexModel="Exponential"
+          return IndexModel
+        if 'Constant refraction index model':
+          IndexModel="Constant"
+          return IndexModel  
+      try:
+        IndexModel
+      except NameError:
+        logging.error('warning Refraction Index Model not found')
+        return -1
+  except:
+    logging.error("GetRefractionIndexModelFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1    
+
+
+    
 
 def GetSiteFromSry(sry_file,outmode="N/A"):
   try:
