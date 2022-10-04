@@ -11,7 +11,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 
 
-def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTraces=True, NLongitudinal=True, ELongitudinal=False, NlowLongitudinal=False,ElowLongitudinal=False,EdepLongitudinal=False, LateralDistribution=True,EnergyDistribution=False):
+def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTraces=True, NLongitudinal=True, ELongitudinal=True, NlowLongitudinal=False,ElowLongitudinal=False,EdepLongitudinal=False, LateralDistribution=True,EnergyDistribution=False):
 
     #TODO: Handle when hdf5  file exists
     #TODO: handle how to append an event
@@ -154,51 +154,55 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
         #Getting info from aires sry instead (much tidier)
 
         IDs,antx,anty,antz,antt=AiresInfo.GetAntennaInfoFromSry(sryfile[0])
+ 
+ 
+        if(IDs==-2 and antx ==-2 and anty ==-2 and antz==-2 and antt==-2):
+          print("no antenna found")
+        else: 
+            antx=np.array(antx, dtype=np.float32)
+            anty=np.array(anty, dtype=np.float32)
+            antz=np.array(antz, dtype=np.float32)
+            antt=np.array(antt, dtype=np.float32)
+            #ZHAireS does not support slopes in the antennas, but you can put them here after you computed the antenna response
+            slopeA=np.zeros(np.shape(antt))
+            slopeB=np.zeros(np.shape(antt))
 
-        antx=np.array(antx, dtype=np.float32)
-        anty=np.array(anty, dtype=np.float32)
-        antz=np.array(antz, dtype=np.float32)
-        antt=np.array(antt, dtype=np.float32)
-        #ZHAireS does not support slopes in the antennas, but you can put them here after you computed the antenna response
-        slopeA=np.zeros(np.shape(antt))
-        slopeB=np.zeros(np.shape(antt))
+            #Getting the information I need
+            #antposfile="N/A"
+            #if(antposfile=="N/A"):
+            #    antposfile=glob.glob(inputfolder+"/antpos.dat")
 
-        #Getting the information I need
-        #antposfile="N/A"
-        #if(antposfile=="N/A"):
-        #    antposfile=glob.glob(inputfolder+"/antpos.dat")
-
-        #if(len(antposfile)==1 and os.path.isfile(antposfile[0])):
-        #    positions = np.genfromtxt(inputfolder+"/antpos.dat") #this is not opening correctly the antena ID
-        #    #workarround
-        #    token = open(antposfile[0],'r')
-        #    linestoken=token.readlines()
-        #    tokens_column_number = 1
-        #    IDs=[]
-        #    slopeA=[]
-        #    slopeB=[]
-        #    for x in linestoken:
-        #        IDs.append(x.split()[tokens_column_number])
-        #        slopeA.append(0.0)
-        #        slopeB.append(0.0)
-        #    token.close()
-        #    antx=positions.T[2]
-        #    anty=positions.T[3]
-        #     antz=positions.T[4]
-        #
-        #elif(len(antposfile)>1):
-        #    logging.critical("multiple antpos.dat files " + str(len(antoposfile)) + " found in " +inputfolder + ". ZHAireSHDF5FileWriter cannot continue")
-        #    return -1
-        #else:
-        #    logging.critical("antpos.dat file not found in " +inputfolder + ". ZHAireSHDF5FileWriter cannot continue")
-        #    return -1
+            #if(len(antposfile)==1 and os.path.isfile(antposfile[0])):
+            #    positions = np.genfromtxt(inputfolder+"/antpos.dat") #this is not opening correctly the antena ID
+            #    #workarround
+            #    token = open(antposfile[0],'r')
+            #    linestoken=token.readlines()
+            #    tokens_column_number = 1
+            #    IDs=[]
+            #    slopeA=[]
+            #    slopeB=[]
+            #    for x in linestoken:
+            #        IDs.append(x.split()[tokens_column_number])
+            #        slopeA.append(0.0)
+            #        slopeB.append(0.0)
+            #    token.close()
+            #    antx=positions.T[2]
+            #    anty=positions.T[3]
+            #     antz=positions.T[4]
+            #
+            #elif(len(antposfile)>1):
+            #    logging.critical("multiple antpos.dat files " + str(len(antoposfile)) + " found in " +inputfolder + ". ZHAireSHDF5FileWriter cannot continue")
+            #    return -1
+            #else:
+            #    logging.critical("antpos.dat file not found in " +inputfolder + ". ZHAireSHDF5FileWriter cannot continue")
+            #    return -1
 
 
-        AntennaInfoMeta= hdf5io.CreatAntennaInfoMeta(RunName,EventName)
+            AntennaInfoMeta= hdf5io.CreatAntennaInfoMeta(RunName,EventName)
 
-        AntennaInfo=hdf5io.CreateAntennaInfo(IDs, antx, anty, antz, antt,slopeA, slopeB, AntennaInfoMeta)
-
-        hdf5io.SaveAntennaInfo(filename,AntennaInfo,EventName)
+            AntennaInfo=hdf5io.CreateAntennaInfo(IDs, antx, anty, antz, antt,slopeA, slopeB, AntennaInfoMeta)
+            
+            hdf5io.SaveAntennaInfo(filename,AntennaInfo,EventName)
 
     #################################################################################################################################
     # Individual Antennas (here comes the complicated part)
@@ -209,20 +213,21 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
        tracefiles=glob.glob(inputfolder+ending_e)
 
        if(len(tracefiles)==0):
-         logging.critical("no trace files found in "+showerdirectory+" ZHAireSHDF5FileWriter cannot continue")
+         logging.critical("no trace files found in "+InputFolder)
 
-       for ant in tracefiles:
+       else:
+           for ant in tracefiles:
 
-            ant_number = int(ant.split('/')[-1].split('.trace')[0].split('a')[-1]) # index in selected antenna list. this only works if all antenna files are consecutive
+                ant_number = int(ant.split('/')[-1].split('.trace')[0].split('a')[-1]) # index in selected antenna list. this only works if all antenna files are consecutive
 
-            ID = IDs[ant_number]
-            ant_position=(antx[ant_number],anty[ant_number],antz[ant_number])
-            ant_slope=(slopeA[ant_number],slopeB[ant_number])
+                ID = IDs[ant_number]
+                ant_position=(antx[ant_number],anty[ant_number],antz[ant_number])
+                ant_slope=(slopeA[ant_number],slopeB[ant_number])
 
-            efield = np.loadtxt(ant,dtype='f4') #we read the electric field as a numpy array
+                efield = np.loadtxt(ant,dtype='f4') #we read the electric field as a numpy array
 
-            efield=hdf5io.CreateEfieldTable(efield, EventName, EventNumber, ID, ant_number,FieldSimulator)
-            hdf5io.SaveEfieldTable(filename,EventName,ID,efield)
+                efield=hdf5io.CreateEfieldTable(efield, EventName, EventNumber, ID, ant_number,FieldSimulator)
+                hdf5io.SaveEfieldTable(filename,EventName,ID,efield)
 
     ##############################################################################################################################
     # LONGITUDINAL TABLES
@@ -495,6 +500,8 @@ def ZHAiresReader(InputFolder, SignalSimInfo=True, AntennaInfo=True, AntennaTrac
 
 if __name__ == '__main__':
 
+  mode="error"
+
   if (len(sys.argv)>3 or len(sys.argv)<2) :
     print("Please point me to a directory with some ZHAires output, and indicate the mode...nothing more, nothing less!")
     print("i.e ZHAireSReader ./MyshowerDir full")
@@ -506,6 +513,11 @@ if __name__ == '__main__':
   elif len(sys.argv)==2 :
     inputfolder=sys.argv[1]
     mode="standard"
+  
+  else:
+    mode="error"
+  
+  
 
 
   if(mode=="standard"):

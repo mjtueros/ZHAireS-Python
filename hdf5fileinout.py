@@ -28,7 +28,7 @@ hdf5io_compression=True #compressing the file externally still gains 50%!
 #============================
 # EventInfo (AstropyTable)
 #============================
-# containing general shower information (zenith, azimuth, energy, xmax, xmax position and the like) (for now the meta of EventInfo for compatibility with anne)
+# containing general shower information (zenith, azimuth, energy, xmax, xmax position and the like) (for now the meta of EventInfoe for compatibility with anne)
 # the meta contains the list of suported tables in the event , and if they are present (True) or not (Fase)
 #=============================
 # ShowerSimInfo (AstropyTable)
@@ -163,6 +163,16 @@ def SaveEnergyDistribution(OutFilename,EGround,EventName):
    EGround.write(OutFilename, path=EventName+"/ShowerTables/EGround", format="hdf5", append=True,  compression=hdf5io_compression, serialize_meta=True)
 
 
+def GetNLongitudinal(InputFilename,EventName):
+   #TODO: Handle error when OutFilename already contains EventName/ShowerTables/EGRound
+    NLongitudinal=Table.read(InputFilename, path=EventName+"/ShowerTables/NLongitudinalProfile")
+    return NLongitudinal
+
+def GetELongitudinal(InputFilename,EventName):
+   #TODO: Handle error when OutFilename already contains EventName/ShowerTables/EGRound
+    ELongitudinal=Table.read(InputFilename, path=EventName+"/ShowerTables/ELongitudinalProfile")
+    return ELongitudinal
+
 ######################################################################################################################################################################
 # Table Getters
 ######################################################################################################################################################################
@@ -202,7 +212,7 @@ def GetAntennaP2PInfo(InputFilename,EventName,compute=False):
    #TODO: Handle error when "InputFilename" is not a file, or a valid file.
 
    try:
-     AntennaInfo=Table.read(InputFilename, path=EventName+"/AntennaP2PInfo")
+     AntennaP2PInfo=Table.read(InputFilename, path=EventName+"/AntennaP2PInfo")
    except:
      if(compute==True or compute=="Save"):
         print("Computing P2P for "+str(InputFilename))
@@ -225,9 +235,9 @@ def GetAntennaP2PInfo(InputFilename,EventName,compute=False):
           SaveAntennaP2PInfo(InputFilename,AntennaP2PInfo,EventName)
      else:
        print("AntennaP2PInfo not found in ",InputFilename," for ",EventName)
-       AntennaInfo=0
+       AntennaP2PInfo=0
 
-   return AntennaInfo
+   return AntennaP2PInfo
 
 def GetAntennaFluenceInfo(InputFilename,EventName,compute=False):
    #TODO: Handle error when "EventName" does not exists
@@ -491,6 +501,10 @@ def GetEnergyFromEventInfo(EventInfo):
 def GetCorePositionFromEventInfo(EventInfo):
    #TODO: Handle errors
     return EventInfo["CorePosition"]
+    
+def GetEventXmaxPosition(EventInfo):
+    #TODO: Handle errors
+    return EventInfo["XmaxPosition"]    
 
 #######################################################################################################################################################################
 # ShowerSim Creators
@@ -1336,6 +1350,16 @@ def SaveGeoRecoRef(OutFilename,EventName,GeoRecoRef):
    #TODO: Handle error when OutFilename already contains EventName/AntennaInfo
    #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
    GeoRecoRef.write(OutFilename, path=EventName+"/GeoRecoRef", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
+
+def GetGeoRecoRef(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName//GeoRecoRef" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   try:
+     GeoRecoRef=Table.read(InputFilename, path=EventName+"/GeoRecoRef")
+   except:  
+     GeoRecoRef= CreateGeoRecoRef(EventName, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 ,{"RunName":"-1","EventName":-1})
+   return GeoRecoRef
        
 #######################################################################################################################################################################
 # PlaneRecoInfo Creator
@@ -1370,6 +1394,16 @@ def SavePlaneRecoInfo(OutFilename,EventName,PlaneRecoInfo):
    #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
    PlaneRecoInfo.write(OutFilename, path=EventName+"/PlaneRecoInfo", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
 
+def GetPlaneRecoInfo(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/PlaneRecoInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   try:
+     PlaneRecoInfo=Table.read(InputFilename, path=EventName+"/PlaneRecoInfo")
+   except:  
+     PlaneRecoInfo= CreatePlaneRecoInfo(-1, -1, -1, -1, -1, -1, -1, -1, {"RunName":"-1","EventName":-1})
+   return PlaneRecoInfo
+
 ######################################################################################################################################################################
 # SphereRecoInfo Creator
 #######################################################################################################################################################################
@@ -1401,6 +1435,16 @@ def SaveSphereRecoInfo(OutFilename,EventName,SphereRecoInfo):
    #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
    SphereRecoInfo.write(OutFilename, path=EventName+"/SphereRecoInfo", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
 
+def GetSphereRecoInfo(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/SphereRecoInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   try:
+     SphereRecoInfo=Table.read(InputFilename, path=EventName+"/SphereRecoInfo")
+   except:  
+     SphereRecoInfo= CreateSphereRecoInfo(-1, -1, -1, -1, -1, -1, -1, -1, {"RunName":"-1","EventName":-1})
+
+   return SphereRecoInfo
 
 ######################################################################################################################################################################
 # ADFRecoInfo Creator
@@ -1437,7 +1481,16 @@ def SaveADFRecoInfo(OutFilename,EventName,ADFRecoInfo):
    #if overwrite=True, it will overwrite the contennts in AntennaInfo, but not on the file (becouse append is True)
    ADFRecoInfo.write(OutFilename, path=EventName+"/ADFRecoInfo", format="hdf5", append=True, overwrite=True, compression=hdf5io_compression, serialize_meta=True)
 
-
+def GetADFRecoInfo(InputFilename,EventName):
+   #TODO: Handle error when "EventName" does not exists
+   #TODO: Handle error when "EventName/ADFRecoInfo" does not exists
+   #TODO: Handle error when "InputFilename" is not a file, or a valid file.
+   try:
+     ADFRecoInfo=Table.read(InputFilename, path=EventName+"/ADFRecoInfo")
+   except:
+     ADFRecoInfo=CreateADFRecoInfo(-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, {"RunName":"-1","EventName":-1})
+       
+   return ADFRecoInfo
 
 
 
@@ -1507,7 +1560,8 @@ def get_p2p_hdf5(InputFilename,antennamax='All',antennamin=0,usetrace='efield'):
         trace=GetAntennaFilteredVoltage(InputFilename,CurrentEventName,AntennaID,OutputFormat="numpy")
       else:
         print('You must specify either efield, voltage or filteredvoltage, bailing out')
-
+        
+      
       p2p_Ex[i-antennamin],p2p_Ey[i-antennamin],p2p_Ez[i-antennamin],p2p_total[i-antennamin] = GetP2PFromTrace(trace)
 
     p2pE = np.stack((p2p_Ex, p2p_Ey, p2p_Ez, p2p_total), axis=0)
@@ -1526,8 +1580,9 @@ def GetHilbertFromTrace(trace):
     if(peakamplitude!=0.0 and np.shape(peakamplitudelocation)==(2,1)):
       peaktime=trace[peakamplitudelocation[0],0]                # get the time of the peak amplitude
     else:
-      peaktime=-1e20
-      peakamplitudelocation=-1
+      print("GetHilbertFromTraceErrror?",peakamplitude,peakamplitudelocation)
+      peaktime=[-1e20]
+      peakamplitudelocation=[(-1,-1)]
       #
     
     DISPLAY=False
@@ -1582,6 +1637,7 @@ def GetHilbertFromTrace(trace):
         plt.legend(loc = 'best')
         plt.show()    
     
+    print(peakamplitude,peaktime,peakamplitudelocation)
     return peakamplitude,peaktime[0],peakamplitudelocation[0][0]    
 
 #      used in GetEventHilbert(InputFilename, CurrentEventName) to get them for all the antennas in the event
@@ -1629,7 +1685,6 @@ def get_peak_time_hilbert_hdf5(InputFilename, antennamax="All",antennamin=0, use
         return -1
      # 
       peakamplitude[i-antennamin],peaktime[i-antennamin],peakamplitudelocation[i-antennamin]=GetHilbertFromTrace(trace)     
-
 
     if(outputlocation):
       return peaktime, peakamplitude , peaklocation

@@ -1063,6 +1063,149 @@ def GetEnergyFractionInNeutrinosFromSry(sry_file,outmode="N/A"):
     logging.error("GetEnergyFractionInNeutrinosFromSry:file not found or invalid:"+sry_file)
     raise
     return -1
+    
+def GetEnergyFractionDepositedFromSry(sry_file,outmode="N/A"):
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      founditonce=0
+      for line in datafile:
+        if "PER SHOWER BALANCE OF ENERGY" in line: #we are in the correct section
+          founditonce=1
+        if founditonce==1 and 'Totals:' in line:
+          founditonce=2
+        if founditonce==2 and "Medium losses:" in line: 
+          line = line.lstrip()
+          stripedline=line.split('Medium losses:',-1)
+          stripedline=stripedline[1]
+          stripedline=stripedline.lstrip()
+          stripedline=stripedline.split(' ',-1)
+          energyf=float(stripedline[0])
+          return energyf
+      try:
+        energyf
+      except NameError:
+        logging.error('GetEnergyFractionDepositedFromSry: Deposited Energy Fraction not found')
+        return -1
+  except:
+    logging.error("GetEnergyFractionDepositedFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1    
+
+def GetEnergyFractionLostFromSry(sry_file,outmode="N/A"):
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      founditonce=0
+      for line in datafile:
+        if "PER SHOWER BALANCE OF ENERGY" in line : #we are in the correct section
+          founditonce=1
+        if founditonce==1 and ('Totals:' in line) :
+          founditonce=2
+        if founditonce==2 and ("Particles lost:" in line):
+          line = line.lstrip()
+          stripedline=line.split('Particles lost:',-1)
+          stripedline=stripedline[1]
+          stripedline=stripedline.lstrip()
+          stripedline=stripedline.split(' ',-1)
+          energyf=float(stripedline[0])
+          return energyf
+      try:
+        energyf
+      except NameError:
+        logging.error('GetEnergyFractionLostFromSry: Lost Energy Fraction not found')
+        return -1
+  except:
+    logging.error("GetEnergyFractionLostFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1
+
+
+def GetEnergyFractionLowFromSry(sry_file,outmode="N/A"):
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      founditonce=0
+      for line in datafile:
+        if "PER SHOWER BALANCE OF ENERGY" in line : #we are in the correct section
+          founditonce=1
+        if founditonce==1 and ('Totals:' in line) :
+          founditonce=2
+        if founditonce==2 and ("Low-E particles:" in line):
+          line = line.lstrip()
+          stripedline=line.split('Low-E particles:',-1)
+          stripedline=stripedline[1]
+          stripedline=stripedline.lstrip()
+          stripedline=stripedline.split(' ',-1)
+          energyf=float(stripedline[0])
+          return energyf
+      try:
+        energyf
+      except NameError:
+        logging.error('GetEnergyFractionLowFromSry: Low Energy Fraction not found')
+        return -1
+  except:
+    logging.error("GetEnergyFractionLowFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1
+
+def GetEnergyFractionGroundFromSry(sry_file,outmode="N/A"):
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      founditonce=0
+      for line in datafile:
+        if "PER SHOWER BALANCE OF ENERGY" in line : #we are in the correct section
+          founditonce=1
+        if founditonce==1 and ('Totals:' in line) :
+          founditonce=2
+        if founditonce==2 and ("Pcles. that reached gnd.:" in line):
+          line = line.lstrip()
+          stripedline=line.split('Pcles. that reached gnd.:',-1)
+          stripedline=stripedline[1]
+          stripedline=stripedline.lstrip()
+          stripedline=stripedline.split(' ',-1)
+          energyf=float(stripedline[0])
+          return energyf
+      try:
+        energyf
+      except NameError:
+        logging.error('GetEnergyFractionGroundFromSry: Ground Energy Fraction not found')
+        return -1
+  except:
+    logging.error("GetEnergyFractionGroundFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1
+        
+def GetEnergyFractionUnphysFromSry(sry_file,outmode="N/A"):
+  try:
+    datafile=open(sry_file,'r')
+    with open(sry_file, "r") as datafile:
+      founditonce=0
+      for line in datafile:
+        if "PER SHOWER BALANCE OF ENERGY" in line : #we are in the correct section
+          founditonce=1
+        if founditonce==1 and ('Totals:' in line) :
+          founditonce=2
+        if founditonce==2 and ("Unphysical particles:" in line):
+          line = line.lstrip()
+          stripedline=line.split('Unphysical particles:',-1)
+          stripedline=stripedline[1]
+          stripedline=stripedline.lstrip()
+          stripedline=stripedline.split(' ',-1)
+          energyf=float(stripedline[0])
+          return energyf
+      try:
+        energyf
+      except NameError:
+        logging.error('GetEnergyFractionUnphysFromSry: Unphysical Energy Fraction not found')
+        return -1
+  except:
+    logging.error("GetEnergyFractionUnphysFromSry:file not found or invalid:"+sry_file)
+    raise
+    return -1
+
+
 
 def get_antenna_t0(xant,yant,hant, azimuthdeg, zenithdeg):
     #this code is copied from zhaires fieldinit
@@ -1178,6 +1321,10 @@ def GetAntennaInfoFromSry(sry_file,outmode="N/A"):
         elif 'Antenna|   X [m]' in line:
           ReadLegacy=True
 
+      if(len(AntennaX)==0):
+        print("Didnt find any antennas on that sry")
+        return -2,-2,-2,-2,-2   
+
   except:
     logging.error("GetAntennaInfoFromSry:file not found or invalid:"+sry_file)
     raise
@@ -1189,8 +1336,36 @@ def GetLongitudinalTable(Path,TableNumber,Slant=True,Precision="Double",tablecol
     sryfile=glob.glob(Path+"/*.sry")
     idffile=glob.glob(Path+"/*.idf")
     inpfile=glob.glob(Path+"/*.inp")
-    tablefile=glob.glob(Path+"/*.t"+str(TableNumber))
-
+    tablefile=glob.glob(Path+"/*.t"+str(TableNumber)+"*")
+    
+    if(len(tablefile)>1):
+      logging.info("found several tables, looking for which is which")
+      for filename in tablefile:
+          with open(filename) as f:
+            if '2 Slant depth of obs. level' in f.read():
+              logging.info(filename+" is the one slant")
+              if(Slant):
+                logging.info(filename+" is the one we use")
+                tablefile=[filename]
+                break
+              else:
+                logging.info(filename+" but this is not what we want")  
+            else:
+              logging.info(filename+" is the one not slant")
+              if(not Slant):
+                logging.info(filename+" is the one we use")
+                tablefile=[filename]
+                break
+              else:
+                logging.info(filename+" but this is not what we want")
+                     
+    if(len(tablefile)>1):
+      logging.info("looks like we have several tables, but we dont have a header. This is shit.")
+      if(Slant):
+        tablefile=[tablefile[0]]
+      else:
+        tablefile=[tablefile[1]]
+    
     if(len(tablefile)==0 and len(idffile)==0):
       logging.error("The requested table was not found, and the idf file is not present. Cannot get the table")
       return -1

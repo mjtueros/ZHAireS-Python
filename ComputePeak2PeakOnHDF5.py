@@ -65,14 +65,12 @@ def ComputePeak2PeakOnHDF5(InputFilename,OutputFilename="N/A"):
     AntennaInfoMeta=AntennaInfo.meta
     IDs=AntennaInfo['ID'].data
 
-    try:
-      p2pE=hdf5io.get_p2p_hdf5(InputFilename,usetrace='efield')
-      peaktimeE, peakE=hdf5io.get_peak_time_hilbert_hdf5(InputFilename,usetrace='efield')
-    except:
-      p2pE=np.zeros((4,len(AntennaInfo)))
-      peaktimeE=np.zeros(len(AntennaInfo))
-      peakE=np.zeros(len(AntennaInfo))
-      logging.debug("efield trace not found")
+    p2pE=hdf5io.get_p2p_hdf5(InputFilename,usetrace='efield')
+    peaktimeE, peakE=hdf5io.get_peak_time_hilbert_hdf5(InputFilename,usetrace='efield')
+    p2pE=np.zeros((4,len(AntennaInfo)))
+    peaktimeE=np.zeros(len(AntennaInfo))
+    peakE=np.zeros(len(AntennaInfo))
+    logging.debug("efield trace not found")
 
     try:
       p2pV=hdf5io.get_p2p_hdf5(InputFilename,usetrace='voltage')
